@@ -1,0 +1,73 @@
+# Dependencies and package-manager caches
+node_modules/
+**/node_modules/
+.npm/
+.pnpm-store/
+
+# Build output and tool caches
+dist/
+**/dist/
+build/
+**/build/
+.vite/
+**/.vite/
+.cache/
+**/.cache/
+coverage/
+**/coverage/
+*.tsbuildinfo
+
+# Logs and test output
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+test-results/
+playwright-report/
+
+# Local secrets and machine-specific environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+.npmrc
+!.npmrc.example
+*.pem
+*.key
+secrets/
+
+# Runtime SQLite files (including SQLite write-ahead logs)
+data/
+**/data/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.db-wal
+*.db-shm
+
+# Personal IDE and OS files
+.idea/
+.vscode/
+.vs/
+.fleet/
+.history/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Android, if an APK project is added in a later approved step
+local.properties
+**/local.properties
+.gradle/
+**/.gradle/
+*.jks
+*.keystore
+*.p12
+*.pfx
+signing.properties
+key.properties

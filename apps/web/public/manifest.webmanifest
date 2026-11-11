@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "단판 오목",
+  "short_name": "단판 오목",
+  "description": "PC와 Android 브라우저에서 즐기는 단판 오목",
+  "lang": "ko-KR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff1e6",
+  "theme_color": "#fff1e6",
+  "icons": [
+    {
+      "src": "/omok-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
