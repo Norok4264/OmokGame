@@ -60,7 +60,7 @@ describe("real WebSocket sessions and challenge lifecycle", () => {
     const url = `ws://127.0.0.1:${address.port}/ws`;
     const clients: TestClient[] = [];
     const connect = async () => {
-      const socket = new WebSocket(url);
+      const socket = new WebSocket(url, {origin:"http://127.0.0.1:5173"});
       const client = new TestClient(socket);
       await once(socket, "open");
       clients.push(client);
@@ -190,7 +190,7 @@ describe("real WebSocket sessions and challenge lifecycle", () => {
     try {
       const names: string[] = [];
       for (const suffix of ["one", "two"]) {
-        const socket = new WebSocket(`ws://127.0.0.1:${address.port}/ws`);
+        const socket = new WebSocket(`ws://127.0.0.1:${address.port}/ws`, {origin:"http://127.0.0.1:5173"});
         const client = new TestClient(socket);
         await once(socket, "open");
         clients.push(client);
@@ -221,7 +221,7 @@ describe("real WebSocket sessions and challenge lifecycle", () => {
     if (!address || typeof address === "string") throw new Error("Expected TCP address");
     const clients: TestClient[] = [];
     const connect = async () => {
-      const socket = new WebSocket(`ws://127.0.0.1:${address.port}/ws`);
+      const socket = new WebSocket(`ws://127.0.0.1:${address.port}/ws`, {origin:"http://127.0.0.1:5173"});
       const client = new TestClient(socket);
       await once(socket, "open");
       clients.push(client);
@@ -274,7 +274,7 @@ describe("real WebSocket sessions and challenge lifecycle", () => {
     if (!address || typeof address === "string") throw new Error("Expected TCP address");
     const clients: TestClient[] = [];
     const connect = async () => {
-      const socket = new WebSocket(`ws://127.0.0.1:${address.port}/ws`);
+      const socket = new WebSocket(`ws://127.0.0.1:${address.port}/ws`, {origin:"http://127.0.0.1:5173"});
       const client = new TestClient(socket);
       await once(socket, "open");
       clients.push(client);
@@ -323,7 +323,7 @@ describe("real WebSocket sessions and challenge lifecycle", () => {
     if (!address || typeof address === "string") throw new Error("Expected TCP address");
     const clients: TestClient[] = [];
     const connect = async () => {
-      const socket = new WebSocket(`ws://127.0.0.1:${address.port}/ws`);
+      const socket = new WebSocket(`ws://127.0.0.1:${address.port}/ws`, {origin:"http://127.0.0.1:5173"});
       const client = new TestClient(socket);
       await once(socket, "open");
       clients.push(client);

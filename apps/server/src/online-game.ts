@@ -7,7 +7,7 @@ export class OnlineGames {
   private unavailable = false;
   private disconnected = new Map<string, number>();
   private deadlines = new Map<string, number>();
-  constructor(private db: SqliteDatabase, private publish: () => void, readonly turnMs = 60_000) {}
+  constructor(private db: SqliteDatabase, private publish: (gameId?:string) => void, readonly turnMs = 60_000) {}
   markUnavailable() { this.unavailable = true; }
   ensureStorageReady(): boolean {
     try {
@@ -73,7 +73,7 @@ export class OnlineGames {
     }
     const result = this.commit(row, actor, requestId, hash, next, status, reason, input.type === "game.move.propose" ? { x: input.x, y: input.y, color } : undefined);
     if (status === "ACTIVE") this.deadlines.set(id, performance.now() + this.turnMs); else this.deadlines.delete(id);
-    this.publish();
+    this.publish(status==="ACTIVE"?id:undefined);
     return { ...result, snapshot: this.snapshot(id) };
   }
   private commit(row: Row, actor: string, requestId: string, hash: string, state: object, status: string, reason: string | null, move?: Record<string, unknown>) {

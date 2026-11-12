@@ -541,6 +541,7 @@ export function App() {
   return (
     <main className="app-shell">
       <CommunicationView/>
+      {screen === "online" && lobbyState?.game?.status !== "PREPARING" && lobbyError && <p role="alert">{lobbyError}</p>}
       <div className="ambient ambient-one" aria-hidden="true" />
       <div className="ambient ambient-two" aria-hidden="true" />
 
@@ -637,7 +638,7 @@ export function App() {
         </section>
       )}
 
-      {screen === "online" && lobbyState?.game && lobbyState.game.status !== "PREPARING" && lobbyState.game.gameId !== dismissedGame && lobbyClientRef.current && <OnlineGame key={lobbyState.game.gameId} playerId={lobbyState.me.playerId} ownName={effectiveName} info={lobbyState.game} client={lobbyClientRef.current} connected={lobbyStatus === "connected"} leave={() => { dismissedGameRef.current = lobbyState.game!.gameId; setDismissedGame(lobbyState.game!.gameId); setScreen("queue"); }} />}
+      {screen === "online" && lobbyState?.game && lobbyState.game.status !== "PREPARING" && lobbyState.game.gameId !== dismissedGame && lobbyClientRef.current && <OnlineGame key={lobbyState.game.gameId} playerId={lobbyState.me.playerId} ownName={effectiveName} info={lobbyState.game} client={lobbyClientRef.current} connected={lobbyStatus === "connected"} leave={() => { if(lobbyState.game?.readOnlyResult){void returnHome();return;} dismissedGameRef.current = lobbyState.game!.gameId; setDismissedGame(lobbyState.game!.gameId); setScreen("queue"); }} />}
       {screen === "online" && lobbyState?.game?.status === "PREPARING" && (
         <section className="page-screen queue-screen preparation-screen" aria-labelledby="preparation-title">
           <AppHeader onHome={() => void cancelPreparation()} eyebrow="실제 WebSocket 대국 신청" />

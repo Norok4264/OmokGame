@@ -1,0 +1,108 @@
+{
+  "atUtc": "2026-11-12T06:50:57.844Z",
+  "scope": "Codex Windows process; not proof of user's interactive shell or separate devices",
+  "node": "v24.22.1",
+  "os": "win32 10.0.22631",
+  "cpu": "13th Gen Intel(R) Core(TM) i5-13500",
+  "logicalCpus": 20,
+  "totalRamBytes": 16840093696,
+  "git": "git version 2.54.0.windows.1",
+  "head": "a1ed979f55a30ef9d2aa6ccfce62afe109a13372",
+  "webBuild": "0.1.0-8f52d08ed448ebe3",
+  "serverSourceSha256": "781e9658c45d3a6235c9d00628658fb7e7ba46d74a31fa5f343a4f66b4d1fe73",
+  "ignoredTracked": [],
+  "rules": [
+    {
+      "path": "node_modules/x",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "apps/web/dist/x",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": ".env",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "data/runtime.sqlite",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "runtime.sqlite-wal",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "runtime.sqlite-shm",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "runtime.sqlite-journal",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "coverage/x",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": ".vscode/settings.json",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "local.properties",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": ".gradle/x",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "signing.keystore",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "private-captures/sample.pcapng",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": ".env.example",
+      "expected": false,
+      "ignored": false
+    },
+    {
+      "path": "package-lock.json",
+      "expected": false,
+      "ignored": false
+    },
+    {
+      "path": "apps/web/public/omok-hero.svg",
+      "expected": false,
+      "ignored": false
+    },
+    {
+      "path": "apps/server/src/limits.test.ts",
+      "expected": false,
+      "ignored": false
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.jar",
+      "expected": false,
+      "ignored": false
+    }
+  ],
+  "lockfileChanged": false,
+  "completed": true
+}

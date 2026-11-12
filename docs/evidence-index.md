@@ -1,7 +1,7 @@
 # 증거 색인
 
 기록 시점: 2026-11-12 (Asia/Seoul)  
-앱 버전: 0.1.0 / 0.1.0-9aa3175978d99527 — 9단계. 최신 실제 앱 관측은 E10; E9는 8단계 당시 빌드 증거.
+앱 버전: 0.1.0 / 0.1.0-8f52d08ed448ebe3 — 10단계. 최신 실제 검증은 E11. E9/E10은 당시 빌드의 역사 증거. 전체 대응표는 integration-validation.md.
 
 이전 단계의 미수집/미구현 문장은 당시 상태이며 최신 표를 우선한다. 과거 로컬 WSS 표기는 TLS 검증 증거가 아니다. 이번 시험은 HTTP/WS이다.
 
@@ -112,3 +112,25 @@
 | P10-02 | 실제 WSS·Android/서로 다른 기기 시험 | 미실행. 11단계 신뢰 HTTPS Android 오프라인 gate 유지. 실제 확보 후 앱 버전·시간·환경과 함께 별도 등록 |
 
 원본 캡처에는 인증 토큰/본문/주소가 포함될 수 있다. private-captures/는 Git 제외이며 현재 추적 파일은 없다. E10 JSON 크기는 실제 응용 페이로드이며 TCP 패킷 전체 크기가 아니다. 학번·성명은 미제공 상태로 유지한다.
+
+## 10단계 실제 소프트웨어 관측 E11
+
+모든 최신 웹 시험은 빌드 **0.1.0-8f52d08ed448ebe3**이며 서버 소스 해시는 E11-06에 있다. 실제 기기 조합·HTTPS 배포·패킷 완료와 구별한다. [전체 A/B 표·시험 조건·G11 게이트](integration-validation.md).
+
+| ID | 실제 파일/구현 시험 | 결과와 한계 |
+|---|---|---|
+| E11-00 | [최종 검증 요약 JSON](evidence/stage10-summary.json) | 원시 파일의 completed/빌드 일치·테스트·Git·성능 범위를 재검사하여 집계. 실제 기기 세 조합은 모두 NOT_RUN |
+| E11-01 | [명령/종료 코드/stdout](evidence/stage10-checks.json), [전체 테스트 결과](evidence/stage10-tests.json) | 타입·22개 파일/115개 테스트·서버/웹 빌드 통과. 규칙 17건, 실제 WS 통합, 가짜 시계/실패 주입 포함. 실제 망·전원/디스크 손상 아님 |
+| E11-02 | [Chrome/Edge E2E JSON](evidence/stage10-browser.json), [Chrome 결과 화면](evidence/stage10-chrome-result.png), [Edge 결과 화면](evidence/stage10-edge-result.png), [온라인 360px](evidence/stage10-online-mobile-emulation.png), [홈 360px](evidence/stage10-mobile-emulation.png) | 실제 Chrome157.0.8103.51/Edge157.0.4341.46. 신청·9수 승패·새로고침 마감·재도전·여러 창 교체·HTML 안전 텍스트·조합 이벤트·채팅 과거 스크롤/숨김. 360px는 PC 에뮬레이션이며 Android/실제 IME 아님 |
+| E11-03 | [Chrome offline JSON](evidence/stage10-chrome-offline.json), [Edge offline JSON](evidence/stage10-edge-offline.json), [Chrome 준비](evidence/stage10-chrome-ready.png), [Chrome 오프라인 종료](evidence/stage10-chrome-offline-final.png), [Edge 준비](evidence/stage10-edge-ready.png), [Edge 오프라인 종료](evidence/stage10-edge-offline-final.png) | 최종 빌드 자원 준비→context offline→실제 브라우저 프로세스 종료/재실행→9수 종료, 복구/새 ID/저장 삭제. 물리 Wi-Fi 차단이나 Android 시험은 아님 |
+| E11-04 | [안전한 실제 앱 이벤트 JSON](evidence/stage10-application-events.json), [A 통신 보기](evidence/stage10-communication-a.png), [B 통신 보기](evidence/stage10-communication-b.png) | 원본 착수 JSON180 UTF-8 bytes 일치, 양쪽 H8/revision2, 채팅 길이13, 정보 제외·기록 지우기. 응용 이벤트이며 TCP 패킷 캡처 아님 |
+| E11-05 | [실제 다운로드 PNG](evidence/stage10-downloaded-result.png), [파일을 브라우저에서 연 화면](evidence/stage10-png-open.png), [변환 실패 주입 화면](evidence/stage10-png-failure.png) | 1100×1500 디코드/실제 파일 열기, 전체 판·이름·색·승리/사유/시각 육안 확인. toBlob 실패 주입→결과 유지→재시도 성공. 실제 디스크 실패/Android 열기 아님 |
+| E11-06 | [실제 저장소/환경 검사](evidence/stage10-repository-environment.json), .gitignore | 실제 ignored-but-tracked 0, 18개 규칙 probe 일치, lockfile 변경 없음. Node/OS/CPU/RAM/Git HEAD·서버 소스 SHA. 제외 규칙은 추적 파일에 소급 자동 적용되지 않음 |
+| E11-07 | [실제 Node 강제 종료/재시작](evidence/stage10-restart.json), scripts/check-restart.mjs | 전용 .cache WAL DB로 별도 Node 프로세스 실제 종료/재시작. FINISHED rev2 보존, ACTIVE rev2→ABORTED rev3, PREPARING rev0→CANCELLED rev1, readiness 후 기존 토큰 결과 조회. 운영 볼륨/전원 장애 아님 |
+| E11-08 | [설치 브라우저/adb 실제 조회](evidence/stage10-device-check.json) | adb1.0.41/platform-tools37.0.1-15733141; 기기 목록 비어 있음. Android Chrome 버전 null, 별도 PC/신뢰 HTTPS 미확인 |
+| E11-09 | [두 창 업데이트 JSON](evidence/stage10-update.json) | Chrome 실제 구 빌드 f4e221f7555b9dff→최종 빌드. 대국 중 보류·홈 이후 적용. 설치 Android PWA/실제 온라인 대국 병행은 아님 |
+| E11-10 | [40세션/20대국 실제 합성 부하](evidence/stage10-capacity.json) | 41번째 세션 거절, 100건 send→ACK p95 268.36ms. 같은 PC Node/loopback/:memory: SQLite. 서버 내부 처리만/브라우저/화면 지연 아님. 외부 망 목표 달성으로 판정하지 않음 |
+
+## 10단계 개념 설명과 미수집 자료
+
+C10의 구조/착수 흐름도·OSI 역할은 [소스 기반 설명](report-network-collection.md)으로 유지·갱신했다. E11의 실제 앱 관측을 패킷으로 명명하지 않는다. pcap/pcapng/TLS 키 로그는 여전히 없으며 P10 수집 절차와 G11-08로 연결한다. 실제 PC-PC/PC-Android/Android-Android, Android 신뢰 HTTPS 오프라인/PNG, 전체 성능 조건은 G11-01~09의 계획이다. 학번·성명은 미제공 상태다.

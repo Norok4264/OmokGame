@@ -6,7 +6,7 @@ export type LobbyState = {
   me: { playerId: string; nickname: string; state: string };
   players: Array<{ playerId: string; nickname: string; state: string }>;
   challenges: Array<{ challengeId: string; applicantPlayerId: string; acceptorPlayerId: string; status: string; responseDeadlineUtc: string }>;
-  game: Omit<RuleGameState, "status"> & { revision: number; turnDeadlineUtc?: string | null; endReason?: string | null; endedAtUtc?: string | null; whiteName: string; blackName: string; messages: RoomChatMessage[]; resultRoom: ResultRoomState | null; gameId: string; status: string; color: "WHITE" | "BLACK"; opponentName: string; deadlineUtc?: string; countdownStartedAtUtc?: string | null; ready?: { white: boolean; black: boolean } } | null;
+  game: Omit<RuleGameState, "status"> & { readOnlyResult?:boolean; revision: number; turnDeadlineUtc?: string | null; endReason?: string | null; endedAtUtc?: string | null; whiteName: string; blackName: string; messages: RoomChatMessage[]; resultRoom: ResultRoomState | null; gameId: string; status: string; color: "WHITE" | "BLACK"; opponentName: string; deadlineUtc?: string; countdownStartedAtUtc?: string | null; ready?: { white: boolean; black: boolean } } | null;
   serverTimeUtc: string;
 };
 
@@ -115,6 +115,13 @@ export class LobbyClient {
         socket.addEventListener("message", (event) => {
           if (this.socket !== socket || this.generation !== generation || this.stopped) return;
           if(typeof event.data==="string")communicationLog.record("RECEIVE",event.data,this.traceChannels.get(socket)!);
+          try{
+            const envelope=JSON.parse(String(event.data));
+            if(envelope?.type==="server.hello"&&envelope.protocolVersion!==PROTOCOL_VERSION){
+              this.stopped=true;const detail="통신 버전이 맞지 않습니다. 홈에서 앱을 업데이트한 뒤 다시 입장하세요.";
+              finish(new Error(detail));this.onStatus("failed",detail);socket.close(4006,"Protocol version mismatch");return;
+            }
+          }catch{/* normal parser below handles malformed JSON */}
           const message = this.parse(event.data);
           if (!message || message.protocolVersion !== PROTOCOL_VERSION) return;
           this.lastReceived = performance.now();
@@ -125,7 +132,7 @@ export class LobbyClient {
         socket.addEventListener("close", (event) => {
           window.clearTimeout(timer);
           if (!settled) finish(new Error(event.code === 4001 ? "서버 최초 인증 시간이 초과되었습니다." : "서버 연결이 닫혔습니다. 재시도해 주세요."));
-          this.onSocketClose(socket);
+          this.onSocketClose(socket,event.code);
         });
       }, { once: true });
       socket.addEventListener("error", () => finish(new Error("서버 연결에 실패했습니다. 네트워크를 확인하고 재시도하세요.")), { once: true });
@@ -205,7 +212,7 @@ export class LobbyClient {
     this.lastSent = performance.now();
     this.transmit(this.socket,{ protocolVersion: PROTOCOL_VERSION, type: "heartbeat", requestId: crypto.randomUUID(), sentAtUtc: new Date().toISOString() });
   }
-  private onSocketClose(socket: WebSocket): void {
+  private onSocketClose(socket: WebSocket,code?:number): void {
     const channel=this.traceChannels.get(socket);if(channel)communicationLog.endChannel(channel);
     if (this.socket !== socket) return;
     this.socket = null;
@@ -215,6 +222,10 @@ export class LobbyClient {
     }
     if (this.heartbeat !== null) window.clearInterval(this.heartbeat);
     this.heartbeat = null;
+    if(code===4002){
+      this.stopped=true;this.reconnectEpoch++;this.reconnecting=false;
+      this.onStatus("failed","다른 창에서 연결되었습니다. 이 창의 입력과 자동 재접속을 중지했습니다.");return;
+    }
     if (!this.stopped) {
       this.onStatus("reconnecting", "연결이 끊겨 복귀 유예 시간 동안 세션 복구를 시도합니다.");
       if (!this.reconnecting) void this.reconnect();

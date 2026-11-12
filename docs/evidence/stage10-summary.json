@@ -1,0 +1,63 @@
+{
+  "generatedAtUtc": "2026-11-12T06:52:57.134Z",
+  "appVersion": "0.1.0",
+  "webBuild": "0.1.0-8f52d08ed448ebe3",
+  "serverSourceSha256": "781e9658c45d3a6235c9d00628658fb7e7ba46d74a31fa5f343a4f66b4d1fe73",
+  "tests": {
+    "files": 22,
+    "passed": 115,
+    "failed": 0
+  },
+  "browsers": {
+    "chrome": "157.0.8103.51",
+    "edge": "157.0.4341.46",
+    "android": null
+  },
+  "syntheticLoad": {
+    "sessions": 40,
+    "games": 20,
+    "session41Rejected": true,
+    "ackSamples": 100,
+    "ackP95Ms": 268.36069999999927,
+    "scope": "same Node process performance.now from ws.send to command.result; includes local transport, broadcast, server validation/SQLite; not isolated server processing, browser receipt or paint"
+  },
+  "browserTiming": {
+    "ackChrome": {
+      "count": 5,
+      "p95Ms": 20.099999997764826
+    },
+    "ackEdge": {
+      "count": 4,
+      "p95Ms": 13.899999998509884
+    },
+    "receiptToDomChrome": {
+      "count": 9,
+      "p95Ms": 9.699999999254942
+    },
+    "receiptToDomEdge": {
+      "count": 9,
+      "p95Ms": 18.899999998509884
+    },
+    "scope": "ACK: each sender's performance.now send→command.result. Receipt→DOM: same recipient clock from snapshot event to matching stone DOM mutation; not paint completion, not A-clock minus B-clock. B arrays restart on reload. Small local functional samples, not external target certification."
+  },
+  "botObservedMaxMs": {
+    "chrome": 16.399999998509884,
+    "edge": 17
+  },
+  "pngDownloadedAndOpened": {
+    "file": "stage10-downloaded-result.png",
+    "width": 1100,
+    "height": 1500
+  },
+  "pngFailureInjectedAndRetried": true,
+  "repositoryPassed": true,
+  "physicalPairs": {
+    "pcPc": "NOT_RUN",
+    "pcAndroid": "NOT_RUN",
+    "androidAndroid": "NOT_RUN"
+  },
+  "androidInventory": "List of devices attached",
+  "trustedHttpsVerified": false,
+  "externalPerformanceTarget": "NOT_VERIFIED: actual <=100ms RTT condition, external loss and sender-to-opponent physical paint not measured",
+  "allRecordedSoftwareChecksPassed": true
+}

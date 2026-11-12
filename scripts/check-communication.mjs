@@ -7,6 +7,7 @@ const local=createRequire(import.meta.url),Database=local("better-sqlite3");
 const tools=createRequire(process.env.TEST_NODE_MODULES?resolve(process.env.TEST_NODE_MODULES,"package.json"):resolve("package.json"));const {chromium}=tools("playwright");
 const db=new Database(":memory:"),app=createApplicationServer(db);
 await new Promise((resolve,reject)=>{app.httpServer.once("error",reject);app.httpServer.listen(3001,"127.0.0.1",resolve);});
+const tag=process.env.TEST_EVIDENCE_TAG??"stage9";if(!/^[a-z0-9-]+$/.test(tag))throw new Error("Invalid tag");
 const origin=process.env.TEST_ORIGIN??"http://127.0.0.1:4173",output=resolve("docs/evidence");await mkdir(output,{recursive:true});
 const report={appVersion:"0.1.0",origin,kind:"sanitized application events; not packet capture",completed:false};let browser;
 async function collect(page){return page.locator(".communication-events tbody tr").evaluateAll(rows=>rows.map(row=>{const c=[...row.querySelectorAll("td")].map(td=>td.textContent);return {atUtc:c[0],kindAndDirection:c[1],coordinate:c[2],revision:c[3],payloadBytes:Number(c[4].match(/\d+/)?.[0]),applicationRtt:c[5],summary:JSON.parse(c[6])};}));}
@@ -39,8 +40,8 @@ try{
   const sanitized=JSON.stringify([report.eventsA,report.eventsB]);for(const value of protectedValues)assert(!sanitized.includes(value),"redaction check failed");
   assert(report.eventsA.some(e=>/\d/.test(e.applicationRtt)&&e.applicationRtt.includes("ms")));
   report.redactionPassed=true;report.samePayloadByteCountPassed=true;report.bothBoardsMatch=true;report.chatLength=[...chatBody].length;
-  await a.locator(".communication-view").screenshot({path:resolve(output,"stage9-communication-a.png")});await b.locator(".communication-view").screenshot({path:resolve(output,"stage9-communication-b.png")});
+  await a.locator(".communication-view").screenshot({path:resolve(output,`${tag}-communication-a.png`)});await b.locator(".communication-view").screenshot({path:resolve(output,`${tag}-communication-b.png`)});
   await a.getByRole("button",{name:"표시 기록 지우기",exact:true}).click();assert.equal(await a.locator(".communication-events tbody tr").count(),0);report.clearPassed=true;
   report.completed=true;report.finishedAt=new Date().toISOString();console.log(JSON.stringify({completed:true,build:report.build,eventsA:report.eventsA.length,eventsB:report.eventsB.length,movePayloadBytes:report.originalMovePayloadBytes,redactionPassed:true}));
 }catch(error){report.error=String(error.stack??error);throw error;}
-finally{await browser?.close();app.lobby.close();app.webSocketServer.close();await new Promise(r=>app.httpServer.close(r));db.close();await writeFile(resolve(output,"stage9-application-events.json"),JSON.stringify(report,null,2));}
+finally{await browser?.close();app.lobby.close();app.webSocketServer.close();await new Promise(r=>app.httpServer.close(r));db.close();await writeFile(resolve(output,`${tag}-application-events.json`),JSON.stringify(report,null,2));}

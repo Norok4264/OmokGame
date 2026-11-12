@@ -1,0 +1,45 @@
+{
+  "appVersion": "0.1.0",
+  "build": "0.1.0-8f52d08ed448ebe3",
+  "startedAt": "2026-11-12T06:45:49.307Z",
+  "kind": "actual isolated Node process kill/restart with file-backed WAL SQLite; not production hardware failure",
+  "completed": true,
+  "transitions": [
+    {
+      "before": {
+        "status": "FINISHED",
+        "revision": 2
+      },
+      "after": {
+        "status": "FINISHED",
+        "revision": 2,
+        "endReason": "RESIGNATION"
+      }
+    },
+    {
+      "before": {
+        "status": "ACTIVE",
+        "revision": 2
+      },
+      "after": {
+        "status": "ABORTED",
+        "revision": 3,
+        "endReason": "SYSTEM_ABORT"
+      }
+    },
+    {
+      "before": {
+        "status": "PREPARING",
+        "revision": 0
+      },
+      "after": {
+        "status": "CANCELLED",
+        "revision": 1,
+        "endReason": null
+      }
+    }
+  ],
+  "savedResultReauthenticated": true,
+  "readyAfterReconciliation": true,
+  "finishedAt": "2026-11-12T06:45:52.997Z"
+}

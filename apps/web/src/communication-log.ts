@@ -5,7 +5,7 @@ export interface AppEvent {
   expectedRevision?:number;approvedRevision?:number;revision?:number;
   applicationRttMs?:number;rttNote?:string;summary:Record<string,unknown>;
 }
-const kinds=new Set(["client.hello","session.start","session.resume","session.end","lobby.snapshot.request","lobby.snapshot","challenge.create","challenge.cancel","challenge.respond","challenge.event","game.ready","game.cancel","game.move.propose","game.snapshot.request","game.resign","game.retry.request","game.retry.respond","game.result.leave","game.event","chat.send","chat.message","heartbeat","heartbeat.request","heartbeat.ack","server.hello","server.error","server.storage","command.result","snapshot"]);
+const kinds=new Set(["client.hello","session.start","session.resume","session.end","lobby.snapshot.request","lobby.snapshot","challenge.create","challenge.cancel","challenge.respond","challenge.event","game.ready","game.cancel","game.move.propose","game.snapshot.request","game.resign","game.retry.request","game.retry.cancel","game.retry.respond","game.result.leave","game.event","chat.send","chat.message","heartbeat","heartbeat.request","heartbeat.ack","server.hello","server.error","server.storage","command.result","snapshot"]);
 const object=(v:unknown):Record<string,unknown>|null=>v!==null&&typeof v==="object"&&!Array.isArray(v)?v as Record<string,unknown>:null;
 const number=(v:unknown):v is number=>typeof v==="number"&&Number.isSafeInteger(v)&&v>=0;
 export function shortId(value:unknown):string|undefined{return typeof value==="string"?value.slice(0,8)+(value.length>8?"…":""):undefined;}

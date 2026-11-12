@@ -21,6 +21,45 @@ function setup() {
   return { db, lobby, connect, alice, bob, close: () => { lobby.close(); db.close(); } };
 }
 describe("B03/B05 heartbeat and socket ownership with injected disconnection", () => {
+  it("B12 does not let the idle-session expiry revoke an ongoing game's recovery token",()=>{
+    const s=setup();try{
+      const token=s.alice.result("a").session.token;s.alice.command("challenge.create","i",{targetPlayerId:s.bob.result("b").session.playerId});s.bob.command("challenge.respond","a2",{challengeId:s.alice.result("i").challengeId,accept:true});const id=s.bob.result("a2").gameId;
+      for(const p of [s.alice,s.bob])p.command("game.ready","r",{gameId:id,revision:0});vi.advanceTimersByTime(3250);
+      s.alice.command("session.end","bypass");expect(s.alice.messages.at(-1).code).toBe("ACTIVE_GAME_REQUIRES_RESIGN");
+      expect(s.db.prepare("SELECT status FROM games WHERE game_id=?").pluck().get(id)).toBe("ACTIVE");
+      s.db.prepare("UPDATE player_sessions SET expires_at_utc=?").run(new Date(Date.now()-1).toISOString());
+      const next=s.connect();next.command("session.resume","refresh",{token});expect(next.result("refresh").resumed).toBe(true);expect(next.result("refresh").resultQueryOnly).not.toBe(true);
+      expect(next.messages.filter(m=>m.type==="lobby.snapshot").at(-1).snapshot.game.status).toBe("ACTIVE");
+    }finally{s.close();}
+  });
+  it("B12 separates expired game-rejoin permission from retained result query, revokes on reset and denies 24h-old results",()=>{
+    const s=setup();try{
+      const token=s.alice.result("a").session.token;s.alice.command("challenge.create","invite",{targetPlayerId:s.bob.result("b").session.playerId});
+      s.bob.command("challenge.respond","accept",{challengeId:s.alice.result("invite").challengeId,accept:true});const id=s.bob.result("accept").gameId;
+      for(const p of [s.alice,s.bob])p.command("game.ready","ready",{gameId:id,revision:0});vi.advanceTimersByTime(3250);
+      s.bob.command("game.resign","resign",{gameId:id,expectedRevision:1});s.alice.close();s.alice.emit("close");vi.advanceTimersByTime(60001);
+      const query=s.connect();query.command("session.resume","query",{token});expect(query.result("query").resultQueryOnly).toBe(true);
+      expect(query.messages.filter(m=>m.type==="lobby.snapshot").at(-1).snapshot.game).toMatchObject({gameId:id,status:"FINISHED",readOnlyResult:true});
+      query.command("challenge.create","forbidden",{targetPlayerId:"other"});expect(query.messages.at(-1).code).toBe("RESULT_QUERY_ONLY");
+      const next=s.connect();next.command("session.start","new",{nickname:"Alice"});expect(next.result("new").session.playerId).not.toBe(s.alice.result("a").session.playerId);
+      query.command("session.end","reset");const revoked=s.connect();revoked.command("session.resume","revoked",{token});expect(revoked.messages.at(-1).code).toBe("SESSION_INVALID");
+      // A separate existing session's result permission also cannot pass the exact result expiry.
+      vi.setSystemTime(new Date(Date.now()+86400000));const late=s.connect();late.command("session.resume","late",{token:s.bob.result("b").session.token});expect(late.messages.at(-1).code).toBe("SESSION_INVALID");
+    }finally{s.close();}
+  });
+  it("B02 expired challenge rejects late acceptance and cooldown begins at termination",()=>{
+    const s=setup();try{
+      const target=s.bob.result("b").session.playerId;s.alice.command("challenge.create","first",{targetPlayerId:target});const id=s.alice.result("first").challengeId;
+      vi.advanceTimersByTime(29000);s.alice.command("challenge.cancel","cancel",{challengeId:id});
+      s.alice.command("challenge.create","early",{targetPlayerId:target});expect(s.alice.messages.at(-1).code).toBe("CHALLENGE_COOLDOWN");
+      s.bob.command("heartbeat","keep",{sentAtUtc:new Date().toISOString()});vi.advanceTimersByTime(10000);
+      s.alice.command("challenge.create","second",{targetPlayerId:target});const next=s.alice.result("second").challengeId;
+      // Keep both alive while the actual 30-second policy elapses on the fake clock.
+      const keep=setInterval(()=>{for(const p of [s.alice,s.bob])p.command("heartbeat","h",{sentAtUtc:new Date().toISOString()});},10000);
+      vi.advanceTimersByTime(30000);clearInterval(keep);s.bob.command("challenge.respond","late",{challengeId:next,accept:true});
+      expect(s.bob.result("late")).toBeUndefined();expect(s.db.prepare("SELECT count(*) FROM games").pluck().get()).toBe(0);
+    }finally{s.close();}
+  });
   beforeEach(() => vi.useFakeTimers({ toFake: ["Date","performance","setTimeout","clearTimeout","setInterval","clearInterval"] }));
   afterEach(() => vi.useRealTimers());
   it("sends heartbeat at 15s and confirms silence at 30s, while valid responses keep the other socket alive", () => {

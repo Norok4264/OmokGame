@@ -22,8 +22,13 @@ function LocalChat(props:ChatProps) { const state=useRoomChatState(props.gameId)
 function ChatView({gameId, messages, me, client, connected, readOnly, ownName="나",state}:ChatProps&{state:RoomChatState}) {
   const {draft,setDraft,outgoing,setOutgoing}=state;
   const scroll=useRef<HTMLDivElement>(null), nearBottom=useRef(true), composing=useRef(false);
+  const [hideOpponent,setHideOpponent]=useState(false),[unread,setUnread]=useState(0);
+  const latestSequence=useRef(messages.at(-1)?.sequence??0);
   useEffect(()=>{
-    if(nearBottom.current && scroll.current) scroll.current.scrollTop=scroll.current.scrollHeight;
+    const added=messages.filter(m=>m.sequence>latestSequence.current).length;
+    latestSequence.current=messages.at(-1)?.sequence??latestSequence.current;
+    if(nearBottom.current && scroll.current){scroll.current.scrollTop=scroll.current.scrollHeight;setUnread(0);}
+    else if(added)setUnread(n=>n+added);
     setOutgoing(rows=>acknowledgeChatSnapshot(rows,messages,me));
   },[messages,me]);
   async function send(row:Outgoing) {
@@ -32,7 +37,7 @@ function ChatView({gameId, messages, me, client, connected, readOnly, ownName="�
     try {
       await client.request("chat.send",{gameId,messageId:row.messageId,body:row.body},row.requestId);
       setOutgoing(rows=>rows.map(r=>r.messageId===row.messageId?{...r,status:"sent",error:undefined}:r));
-    } catch(error) { setOutgoing(rows=>rows.map(r=>r.messageId===row.messageId?{...r,status:"failed",error:error instanceof Error?error.message:"전송 실패"}:r)); }
+    } catch(error) { setDraft(current=>current||row.body);setOutgoing(rows=>rows.map(r=>r.messageId===row.messageId?{...r,status:"failed",error:error instanceof Error?error.message:"전송 실패"}:r)); }
   }
   function submit() {
     if(!connected || readOnly || !draft.trim() || [...draft.trim()].length>200) return;
@@ -41,10 +46,12 @@ function ChatView({gameId, messages, me, client, connected, readOnly, ownName="�
   }
   return <section className="online-chat" aria-label="대국 채팅">
     <h2>채팅 {readOnly?"· 종료 후 읽기 전용":""}</h2>
-    <div className="online-chat-messages" ref={scroll} onScroll={()=>{const el=scroll.current!;nearBottom.current=shouldFollowChat(el.scrollHeight,el.scrollTop,el.clientHeight);}} role="log" aria-live="polite" aria-relevant="additions">
-      {messages.map(message=><p key={message.sequence} className={message.senderPlayerId===me?"chat-mine":"chat-theirs"}><strong>{message.displayName}</strong> <span>{message.body}</span> <small>{message.senderPlayerId===me?"전송 완료":""}</small></p>)}
+    <button className="button button-quiet" aria-pressed={hideOpponent} onClick={()=>setHideOpponent(value=>!value)}>{hideOpponent?"상대 메시지 다시 보기":"상대 메시지 숨기기"}</button>
+    <div className="online-chat-messages" ref={scroll} onScroll={()=>{const el=scroll.current!;nearBottom.current=shouldFollowChat(el.scrollHeight,el.scrollTop,el.clientHeight);if(nearBottom.current)setUnread(0);}} role="log" aria-live="polite" aria-relevant="additions">
+      {messages.filter(message=>!hideOpponent||message.senderPlayerId===me).map(message=><p key={message.sequence} className={message.senderPlayerId===me?"chat-mine":"chat-theirs"}><strong>{message.displayName}</strong> <span>{message.body}</span> <small>{message.senderPlayerId===me?"전송 완료":""}</small></p>)}
       {outgoing.filter(row=>!messages.some(m=>m.messageId===row.messageId && m.senderPlayerId===me)).map(row=><p key={row.messageId} className="chat-mine"><strong>{ownName}</strong> <span>{row.body}</span> <small>{row.status==="sending"?"전송 중":row.status==="sent"?"전송 완료":"전송 실패"}</small>{row.status==="failed" && <><span role="status">{row.error}</span><button className="button button-quiet" disabled={!connected||readOnly} onClick={()=>void send(row)}>같은 ID로 재시도</button></>}</p>)}
     </div>
+    {unread>0&&<button className="button button-secondary" onClick={()=>{nearBottom.current=true;if(scroll.current)scroll.current.scrollTop=scroll.current.scrollHeight;setUnread(0);}}>새 메시지 {unread}건 · 아래로</button>}
     <form onSubmit={event=>{event.preventDefault();if(!composing.current)submit();}}>
       <label htmlFor={`chat-${gameId}`}>메시지 · {[...draft].length}/200</label>
       <div className="online-chat-input"><input id={`chat-${gameId}`} value={draft} disabled={readOnly} onChange={event=>setDraft(event.target.value)}

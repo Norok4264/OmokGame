@@ -133,6 +133,11 @@ export const migrations: readonly Migration[] = [
         WHERE status IN ('FINISHED','ABORTED') AND ended_at_utc IS NOT NULL;
     `,
   },
+  { version:4,name:"rematch_cooldown_and_retention_index",sql:`
+    ALTER TABLE rematches ADD COLUMN resolved_at_utc TEXT;
+    CREATE INDEX games_retention ON games(ended_at_utc) WHERE status IN ('FINISHED','ABORTED','CANCELLED');
+  ` },
+  {version:5,name:"separate_result_query_revocation",sql:`ALTER TABLE player_sessions ADD COLUMN result_access_revoked INTEGER NOT NULL DEFAULT 0;`},
 ];
 
 export function runMigrations(db: SqliteDatabase): void {

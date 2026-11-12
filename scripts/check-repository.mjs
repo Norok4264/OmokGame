@@ -1,0 +1,11 @@
+import {execFileSync,spawnSync} from "node:child_process";
+import {readFile,writeFile,mkdir,readdir} from "node:fs/promises";
+import {createHash} from "node:crypto";
+import os from "node:os";
+const git=(...args)=>execFileSync("git",args,{encoding:"utf8"}).trim();
+const probes={"node_modules/x":true,"apps/web/dist/x":true,".env":true,"data/runtime.sqlite":true,"runtime.sqlite-wal":true,"runtime.sqlite-shm":true,"runtime.sqlite-journal":true,"coverage/x":true,".vscode/settings.json":true,"local.properties":true,".gradle/x":true,"signing.keystore":true,"private-captures/sample.pcapng":true,".env.example":false,"package-lock.json":false,"apps/web/public/omok-hero.svg":false,"apps/server/src/limits.test.ts":false,"android/gradle/wrapper/gradle-wrapper.jar":false};
+const rules=Object.entries(probes).map(([path,expected])=>({path,expected,ignored:spawnSync("git",["check-ignore","-q","--no-index","--",path]).status===0}));
+const ignoredTracked=git("ls-files","-ci","--exclude-standard").split(/\r?\n/).filter(Boolean);
+const source=createHash("sha256");async function hashDir(dir){for(const item of (await readdir(dir,{withFileTypes:true})).sort((a,b)=>a.name.localeCompare(b.name))){const path=dir+"/"+item.name;if(item.isDirectory())await hashDir(path);else {source.update(path);source.update(await readFile(path));}}}await hashDir("apps/server/src");
+const report={atUtc:new Date().toISOString(),scope:"Codex Windows process; not proof of user's interactive shell or separate devices",node:process.version,os:os.platform()+" "+os.release(),cpu:os.cpus()[0]?.model,logicalCpus:os.cpus().length,totalRamBytes:os.totalmem(),git:git("--version"),head:git("rev-parse","HEAD"),webBuild:JSON.parse(await readFile("apps/web/dist/offline-manifest.json","utf8")).version,serverSourceSha256:source.digest("hex"),ignoredTracked,rules,lockfileChanged:git("diff","--name-only","HEAD","--","package-lock.json")!=="",completed:ignoredTracked.length===0&&rules.every(p=>p.expected===p.ignored)};
+await mkdir("docs/evidence",{recursive:true});await writeFile("docs/evidence/stage10-repository-environment.json",JSON.stringify(report,null,2));console.log(JSON.stringify(report));if(!report.completed||report.lockfileChanged)process.exitCode=1;

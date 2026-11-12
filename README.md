@@ -50,10 +50,7 @@ npm run check:server
 
 ## 다음 단계
 
-1. 실제 PC와 브라우저 버전을 확인하고 환경 문서를 보완합니다.
-2. 실제 IME·DOM 스크롤·PNG 다운로드 파일 열기와 모바일 브라우저를 검증합니다.
-3. 오프라인 PWA 재실행과 통신 보기의 실제 이벤트 기록을 완성합니다.
-4. PNG 저장, PWA 오프라인 재실행, 통신 보기를 완성하고 실제 기기 증거를 수집합니다.
+실제 별도 PC·Android 두 대와 신뢰 HTTPS/WSS를 확보하여 기기 조합·망 전환·IME·PNG·오프라인/업데이트를 재검증합니다. [전체 통합 검증표와 G11 필수 항목](docs/integration-validation.md)을 따르세요. PC 뷰포트 에뮬레이션은 Android 실기 시험이 아닙니다.
 
 상세한 현재 상태는 `docs/handoff.md`, 요구사항 출처는 `docs/requirements.md`, 메시지 계약은 `docs/protocol.md`, 검증 상태는 `docs/acceptance.md`를 참고하세요.
 Codex 계정을 바꾸고 같은 PC 작업 폴더에서 이어갈 때는 `docs/account-switch-handoff.md`를 먼저 읽으세요.
@@ -67,3 +64,7 @@ Codex 계정을 바꾸고 같은 PC 작업 폴더에서 이어갈 때는 `docs/a
 ## 통신 보기와 보고서 자료
 
 각 화면의 ‘통신 보기’를 펼치면 현재 브라우저의 실제 WebSocket 송수신을 확인할 수 있습니다. 최근 200건만 메모리에 유지하며 토큰·닉네임·채팅 본문을 제외합니다. 바이트는 원본 JSON UTF-8 크기, 왕복시간은 같은 기기의 응용 요청/응답 시간입니다. [현재 구조도·착수 흐름도·보고서 Ⅱ·Ⅲ 수집 절차](docs/report-network-collection.md), [9단계 실제 결과와 한계](docs/stage9-communication.md)를 참고하세요. 실제 Wireshark 패킷 및 WSS 배포 검증은 아직 없습니다.
+
+## 최신 통합 검증
+
+앱0.1.0 / 웹0.1.0-8f52d08ed448ebe3, 22개 파일115개 테스트·타입/빌드 통과. npm PATH가 없는 현재 Codex 셸에서는 `node scripts/verify-integrated.mjs`로 재현할 수 있습니다. Chrome/Edge 격리 대국·실제 PNG 열기·오프라인 재실행·업데이트와 실제 별도 Node/파일 WAL DB 재시작을 확인했습니다. 실제 기기 전체 인수는 미완료입니다. [검증표](docs/integration-validation.md), [최신 증거](docs/evidence-index.md). 의존성·lockfile 유지.

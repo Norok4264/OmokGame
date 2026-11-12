@@ -44,10 +44,10 @@ export function OnlineGame({ info, client, connected, leave, ownName, playerId }
   }
   const chat=<Chat state={chatState} key={info.gameId} gameId={info.gameId} messages={info.messages??[]} me={playerId} ownName={ownName} client={client} connected={connected} readOnly={info.status!=="ACTIVE"}/>;
   return <section className="page-screen game-screen" data-game-controls="true">
-    <h1>온라인 대국</h1>
+    <h1>온라인 대국</h1>{info.readOnlyResult&&<p role="status">보관 결과 조회 전용입니다. 경기 복귀와 재도전은 종료됐으며 나가면 새 이용을 시작합니다.</p>}
     <p>{ownName} ({info.color === "BLACK" ? "흑" : "백"}) · 상대 {info.opponentName} · revision {info.revision}</p>
     <p role="status">{connected ? "서버 연결됨" : "연결 복구 중"} · 현재 차례: {info.nextColor ?? "종료"} · 남은 시간 {Math.max(0, Math.ceil((Date.parse(info.turnDeadlineUtc ?? "") - now) / 1000)) || 0}초</p>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(15, 1fr)", background: "#dba968", padding: "8px", width: "min(100%, 650px)", aspectRatio: "1", margin: "auto" }} role="grid" aria-label="15×15 오목판" tabIndex={0}
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(15, 1fr)", background: "#e8bf8f", padding: "8px", width: "min(100%, 650px)", aspectRatio: "1", margin: "auto" }} role="grid" aria-label="15×15 오목판" tabIndex={0}
       onKeyDown={(event) => {
         if (event.target instanceof HTMLInputElement || !ownTurn) return;
         if (event.key === "Escape") setCandidate(null);
@@ -63,8 +63,10 @@ export function OnlineGame({ info, client, connected, leave, ownName, playerId }
     <button className="button button-primary" disabled={!ownTurn || !candidate} onClick={() => void command("game.move.propose")}>돌 놓기</button>
     <button className="button button-secondary" disabled={info.status !== "ACTIVE" || pending || !connected} onClick={() => { if (window.confirm("기권하시겠습니까? 상대의 승리로 종료됩니다.")) void command("game.resign"); }}>기권</button>
     <p role="status">{notice}</p>
+    {info.status!=="ACTIVE"&&<button className="button button-secondary" onClick={()=>resultRef.current?.showModal()}>결과 보기</button>}
     {info.status === "ACTIVE" && chat}
-    {info.status !== "ACTIVE" && <dialog ref={resultRef} onCancel={e => e.preventDefault()} aria-label="대국 결과" className="queue-card result-dialog"><h2>{info.result?.kind === "WIN" ? `${info.result.winner === info.color ? "승리" : "패배"}` : info.status === "ABORTED" ? "무효 종료" : "무승부"}</h2>
+    {info.status !== "ACTIVE" && <dialog ref={resultRef} aria-label="대국 결과" className="queue-card result-dialog"><h2>{info.result?.kind === "WIN" ? `${info.result.winner === info.color ? "승리" : "패배"}` : info.status === "ABORTED" ? "무효 종료" : "무승부"}</h2>
+      <button className="button button-quiet" onClick={()=>resultRef.current?.close()}>판 확인 · 팝업 닫기</button>
       <p>{resultReason(info.status,info.endReason)}</p>
       <p>결과방 남은 시간: {Math.max(0,Math.ceil((Date.parse(info.resultRoom?.expiresAtUtc??"")-now)/1000))||0}초</p>
       {info.result?.kind === "WIN" && info.result.winner === info.color && <div>
@@ -74,9 +76,10 @@ export function OnlineGame({ info, client, connected, leave, ownName, playerId }
       {saveError && <p role="alert">{saveError} · 결과는 유지됩니다. 재시도하거나 미리보기를 확인하세요.</p>}
       {preview && <details open={Boolean(saveError)}><summary>PNG 미리보기</summary><img src={preview} alt="최종 보드·이름·돌 색·승리 팝업·종료 사유·저장 시각 미리보기" style={{maxWidth:"100%"}} /></details>}
       <div className="rematch-actions">
-        {info.result?.kind === "WIN" && info.result.winner !== info.color && <button className="button button-primary" disabled={!connected||pending||!info.resultRoom?.canRequest} onClick={()=>void roomCommand("game.retry.request")}>재도전 요청 · 나는 백</button>}
+        {info.result?.kind === "WIN" && info.result.winner !== info.color && !info.readOnlyResult && <button className="button button-primary" disabled={!connected||pending||!info.resultRoom?.canRequest} onClick={()=>void roomCommand("game.retry.request")}>재도전 요청 · 나는 백</button>}
         {info.resultRoom?.canRespond && <><p>상대가 재도전을 신청했습니다. 승낙하면 나는 흑입니다.</p><button className="button button-primary" disabled={!connected||pending} onClick={()=>void roomCommand("game.retry.respond",{accept:true})}>재도전 승낙</button><button className="button button-secondary" disabled={!connected||pending} onClick={()=>void roomCommand("game.retry.respond",{accept:false})}>거부</button></>}
         {info.resultRoom?.retry?.status==="PENDING" && <p role="status">재도전 응답 대기 · {Math.max(0,Math.ceil((Date.parse(info.resultRoom.retry.deadlineUtc)-now)/1000))}초</p>}
+        {info.resultRoom?.retry?.status==="PENDING"&&info.resultRoom.retry.requesterPlayerId===playerId&&<button className="button button-secondary" disabled={!connected||pending} onClick={()=>void roomCommand("game.retry.cancel")}>재도전 신청 취소</button>}
         {info.resultRoom?.retry?.status==="DECLINED" && <p role="status">재도전 요청이 거절되었습니다.</p>}
         {info.resultRoom?.retry?.status==="EXPIRED" && <p role="status">재도전 응답 시간이 만료되었습니다.</p>}
         {info.resultRoom?.retry?.status==="CANCELLED" && <p role="status">재도전 요청이 취소되었습니다.</p>}
@@ -84,6 +87,6 @@ export function OnlineGame({ info, client, connected, leave, ownName, playerId }
       </div>
       <p role="status">{notice}</p>
       {chat}
-      <button className="button button-primary" style={{ float: "right" }} disabled={pending} onClick={()=>void roomCommand("game.result.leave",{},true)}>대기열로 나가기</button></dialog>}
+      <button className="button button-primary" style={{ float: "right" }} disabled={pending} onClick={()=>void roomCommand("game.result.leave",{},true)}>{info.readOnlyResult?"초기 화면으로 · 새 이용":"대기열로 나가기"}</button></dialog>}
   </section>;
 }

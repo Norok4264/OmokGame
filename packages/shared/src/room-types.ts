@@ -30,6 +30,7 @@ export function roomErrorMessage(code:string):string {
     NOT_GAME_PARTICIPANT:"이 대국방 참가자만 사용할 수 있습니다.",
     REMATCH_OPPONENT_UNAVAILABLE:"상대가 나갔거나 연결이 끊겼습니다. 연결 상태를 확인하세요.",
     REMATCH_LOSER_ONLY:"재도전은 패자만 요청할 수 있습니다.",REMATCH_WINNER_ONLY:"재도전 승낙은 승자만 할 수 있습니다.",
+    REMATCH_COOLDOWN:"재도전 종료 후 10초 동안 기다린 뒤 다시 신청하세요.",GAME_CAPACITY:"동시 대국 20판이 진행 중입니다. 잠시 후 재시도하세요.",
     REMATCH_ALREADY_PENDING:"이미 재도전 응답을 기다리고 있습니다.",REMATCH_CLOSED:"재도전 응답 시간이 끝났습니다. 결과방이 열려 있다면 다시 신청하세요.",
     REMATCH_NO_LOSER:"무승부·무효 대국은 대기열에서 새로 신청하세요.",REMATCH_PLAYER_BUSY:"참가자가 다른 신청이나 대국 중입니다. 대기열에서 다시 확인하세요.",
     RESULT_ROOM_EXPIRED:"결과방 5분이 만료되어 대기열로 이동합니다.",RESULT_ROOM_LEFT:"이미 결과방을 나갔습니다. 대기열에서 새로 신청하세요.",

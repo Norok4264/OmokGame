@@ -6,6 +6,8 @@ import { createRuleGame, parseClientMessage, PROTOCOL_VERSION, validateNickname,
 import type { ClientMessage } from "@danpan/shared";
 import { WebSocket, type WebSocketServer } from "ws";
 import type { SqliteDatabase } from "./storage/database.js";
+import { LIMITS, admitRequest, assertGameCapacity, sendBounded } from "./limits.js";
+import { purgeExpiredRecords } from "./storage/retention.js";
 
 export interface LobbyTiming {
   authTimeoutMs: number;
@@ -29,7 +31,7 @@ export const DEFAULT_LOBBY_TIMING: LobbyTiming = {
 
 type PlayerId = string;
 type Session = { playerId: PlayerId; tokenHash: string };
-type SocketState = { playerId: PlayerId | null; authTimer: NodeJS.Timeout; helloSeen: boolean; lastValid: number; lastHeartbeat: number };
+type SocketState = { playerId: PlayerId | null; resultGameId?:string; authTimer: NodeJS.Timeout; helloSeen: boolean; lastValid: number; lastHeartbeat: number };
 type PlayerSummary = { playerId: string; nickname: string; state: "WAITING" | "RESPONDING" | "IN_GAME" | "RECONNECTING" };
 type LobbySnapshot = {
   me: { playerId: string; nickname: string; state: PlayerSummary["state"] };
@@ -44,7 +46,7 @@ function hashToken(token: string): string {
 }
 
 function send(socket: WebSocket, message: Record<string, unknown>): void {
-  if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ protocolVersion: PROTOCOL_VERSION, ...message }));
+  sendBounded(socket,{ protocolVersion: PROTOCOL_VERSION, ...message });
 }
 
 function sendError(socket: WebSocket, requestId: string | null, code: string, message: string): void {
@@ -72,10 +74,17 @@ export class LobbyCoordinator {
   private readonly challengeDeadlines = new Map<string, number>();
   private readonly preparationDeadlines = new Map<string, number>();
   private readonly countdownDeadlines = new Map<string, number>();
+  private readonly requestWindows=new Map<PlayerId,number[]>();
+  private readonly unauthWindows=new WeakMap<WebSocket,number[]>();
+  private nextPurge=0;
 
   constructor(private readonly db: SqliteDatabase, private readonly wss: WebSocketServer, private readonly timing: LobbyTiming = DEFAULT_LOBBY_TIMING) {
     this.rooms = new Rooms(db, p => this.playerSockets.has(p), () => this.broadcastSnapshots(), timing.preparationLifetimeMs);
-    this.online = new OnlineGames(db, () => this.broadcastSnapshots());
+    this.online = new OnlineGames(db, id => {
+      if(!id){this.broadcastSnapshots();return;}
+      const row=this.db.prepare("SELECT white_player_id,black_player_id FROM games WHERE game_id=?").get(id) as {white_player_id:string;black_player_id:string};
+      for(const player of [row.white_player_id,row.black_player_id]){const socket=this.playerSockets.get(player);if(socket)this.sendSnapshot(socket,player);}
+    });
     const monotonicNow = performance.now();
     const utcNow = Date.now();
     const pending = this.db.prepare("SELECT challenge_id,response_deadline_utc FROM challenges WHERE status='PENDING'").all() as Array<{ challenge_id: string; response_deadline_utc: string }>;
@@ -102,7 +111,7 @@ export class LobbyCoordinator {
   }
 
   private attach(socket: WebSocket, _request: IncomingMessage): void {
-    send(socket, { type: "server.hello", serverBuild: "0.2.0", serverTimeUtc: new Date().toISOString() });
+    send(socket, { type: "server.hello", serverBuild: "0.1.0", serverTimeUtc: new Date().toISOString() });
     const state: SocketState = { playerId: null, helloSeen: false, lastValid: performance.now(), lastHeartbeat: performance.now(), authTimer: setTimeout(() => {
       if (state.playerId === null) socket.close(4001, "Authentication timeout");
     }, this.timing.authTimeoutMs) };
@@ -115,6 +124,9 @@ export class LobbyCoordinator {
 
   private onMessage(socket: WebSocket, state: SocketState, raw: string): void {
     if (state.playerId && this.playerSockets.get(state.playerId) !== socket) return;
+    const history=state.playerId ? this.requestWindows.get(state.playerId)??[] : this.unauthWindows.get(socket)??[];
+    if(state.playerId)this.requestWindows.set(state.playerId,history);else this.unauthWindows.set(socket,history);
+    if(!admitRequest(history,performance.now())){sendError(socket,null,"RATE_LIMITED","10초에 100건까지 요청할 수 있습니다. 잠시 후 상태를 조회하세요.");return;}
     if (!this.isReady()) { sendError(socket, null, "STORAGE_UNAVAILABLE", "저장소 복구를 기다립니다."); return; }
     this.sweep();
     if (state.playerId && this.playerSockets.get(state.playerId) !== socket) return;
@@ -123,8 +135,14 @@ export class LobbyCoordinator {
       const value: unknown = JSON.parse(raw);
       if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid message");
       const input = value as Record<string, unknown>;
-      if (input.protocolVersion !== PROTOCOL_VERSION || typeof input.type !== "string" || typeof input.requestId !== "string") throw new Error("invalid envelope");
-      if (["game.result.leave", "game.retry.request", "game.retry.respond", "chat.send"].includes(String(input.type))) {
+      if (input.protocolVersion !== PROTOCOL_VERSION || typeof input.type !== "string" || typeof input.requestId !== "string" || !input.requestId || input.requestId.length>128) throw new Error("invalid envelope");
+      if(state.resultGameId){
+        if(!this.db.prepare("SELECT 1 FROM games WHERE game_id=? AND ended_at_utc>?").get(state.resultGameId,new Date(Date.now()-LIMITS.retentionMs).toISOString())){socket.close(4004,"Stored result expired");return;}
+        if(input.type==="game.result.leave"){this.endSession(socket,state,input.requestId);return;}
+        const allowed=["heartbeat","session.end","lobby.snapshot.request","game.snapshot.request"];
+        if(!allowed.includes(input.type)||(input.type==="game.snapshot.request"&&input.gameId!==state.resultGameId)){sendError(socket,input.requestId,"RESULT_QUERY_ONLY","보관 결과 조회 전용입니다. 새 이용은 홈에서 시작하세요.");return;}
+      }
+      if (["game.result.leave", "game.retry.request", "game.retry.cancel", "game.retry.respond", "chat.send"].includes(String(input.type))) {
         if (!state.playerId) { sendError(socket,input.requestId,"AUTH_REQUIRED","세션 인증이 필요합니다."); return; }
         if (!input.requestId || input.requestId.length>128 || typeof input.gameId !== "string" || !input.gameId || input.gameId.length>128) throw new Error("invalid room envelope");
         state.lastValid=performance.now();
@@ -138,7 +156,8 @@ export class LobbyCoordinator {
         } catch(error) {
           if(error && typeof error === "object" && "code" in error && String(error.code).startsWith("SQLITE")) this.online.markUnavailable();
           const code=error instanceof Error && /^[A-Z_]+$/.test(error.message) ? error.message : "ROOM_OPERATION_FAILED";
-          sendError(socket,input.requestId,code,roomErrorMessage(code));
+          const wait=error&&typeof error==="object"&&"retryAfterMs" in error?Number(error.retryAfterMs):0;
+          sendError(socket,input.requestId,code,roomErrorMessage(code)+(wait>0?` 약 ${Math.ceil(wait/1000)}초 후 재시도하세요.`:""));
           this.sendSnapshot(socket,state.playerId);
         }
         return;
@@ -148,7 +167,7 @@ export class LobbyCoordinator {
         if (!state.playerId) { sendError(socket, input.requestId as string, "AUTH_REQUIRED", "세션 인증이 필요합니다."); return; }
         state.lastValid = performance.now();
         try { sendResult(socket, input.requestId as string, this.online.command(state.playerId, input)); }
-        catch (error) { if (error && typeof error === "object" && "code" in error && String(error.code).startsWith("SQLITE")) this.online.markUnavailable(); send(socket, { type: "server.error", requestId: input.requestId, ok: false, code: error instanceof Error ? error.message : "STORAGE_FAILED", message: "요청을 승인하지 못했습니다. 최신 상태를 확인하세요.", snapshot: null }); this.sendSnapshot(socket, state.playerId); }
+        catch (error) { if (error && typeof error === "object" && "code" in error && String(error.code).startsWith("SQLITE")) this.online.markUnavailable(); send(socket, { type: "server.error", requestId: input.requestId, ok: false, code: error instanceof Error && /^[A-Z_]+$/.test(error.message) ? error.message : "STORAGE_FAILED", message: "요청을 승인하지 못했습니다. 최신 상태를 확인하세요.", snapshot: null }); this.sendSnapshot(socket, state.playerId); }
         return;
       }
       if (input.type === "client.hello") {
@@ -193,6 +212,7 @@ export class LobbyCoordinator {
 
   private startSession(socket: WebSocket, state: SocketState, requestId: string, input: string): void {
     if (state.playerId) { sendError(socket, requestId, "SESSION_ALREADY_AUTHENTICATED", "이미 인증된 세션입니다."); return; }
+    if(new Set([...this.playerSockets.keys(),...this.graceTimers.keys()]).size>=LIMITS.sessions){sendError(socket,requestId,"SESSION_CAPACITY","온라인 40세션이 사용 중입니다. 잠시 후 재시도하거나 혼자 놀기를 이용하세요.");return;}
     const now = new Date();
     const nowIso = now.toISOString();
     const normalized = input.trim() ? validateNickname(input) : null;
@@ -233,9 +253,22 @@ export class LobbyCoordinator {
     if (state.playerId) { sendError(socket, requestId, "SESSION_ALREADY_AUTHENTICATED", "이미 인증된 연결입니다."); return; }
     const row = this.db.prepare(`SELECT ps.player_id, p.nickname_display FROM player_sessions ps
       JOIN players p ON p.player_id=ps.player_id
-      WHERE ps.token_hash=? AND ps.ended_at_utc IS NULL AND ps.expires_at_utc>?`).get(hashToken(token), new Date().toISOString()) as
+      WHERE ps.token_hash=? AND ps.result_access_revoked=0 AND ps.ended_at_utc IS NULL AND (ps.expires_at_utc>? OR EXISTS(
+        SELECT 1 FROM games g WHERE g.status IN ('PREPARING','ACTIVE') AND (g.white_player_id=ps.player_id OR g.black_player_id=ps.player_id)))`).get(hashToken(token), new Date().toISOString()) as
       | { player_id: string; nickname_display: string } | undefined;
+    if(!row){
+      const result=this.db.prepare(`SELECT ps.player_id,p.nickname_display,g.game_id FROM player_sessions ps JOIN players p ON p.player_id=ps.player_id
+        JOIN games g ON g.white_player_id=ps.player_id OR g.black_player_id=ps.player_id
+        WHERE ps.token_hash=? AND ps.result_access_revoked=0 AND g.status IN ('FINISHED','ABORTED') AND g.ended_at_utc>?
+        ORDER BY g.ended_at_utc DESC LIMIT 1`).get(hashToken(token),new Date(Date.now()-LIMITS.retentionMs).toISOString()) as {player_id:string;nickname_display:string;game_id:string}|undefined;
+      if(result){
+        if(new Set([...this.playerSockets.keys(),...this.graceTimers.keys()]).size>=LIMITS.sessions&&!this.playerSockets.has(result.player_id)&&!this.graceTimers.has(result.player_id)){sendError(socket,requestId,"SESSION_CAPACITY","잠시 후 다시 조회하세요.");return;}
+        state.resultGameId=result.game_id;this.authenticate(socket,state,result.player_id);
+        sendResult(socket,requestId,{session:{playerId:result.player_id,nickname:result.nickname_display,token},resumed:true,resultQueryOnly:true});this.sendSnapshot(socket,result.player_id);return;
+      }
+    }
     if (!row) { sendError(socket, requestId, "SESSION_INVALID", "저장된 세션을 복구할 수 없습니다. 새 이용을 시작해 주세요."); return; }
+    if(!this.playerSockets.has(row.player_id)&&!this.graceTimers.has(row.player_id)&&new Set([...this.playerSockets.keys(),...this.graceTimers.keys()]).size>=LIMITS.sessions){sendError(socket,requestId,"SESSION_CAPACITY","온라인 세션이 가득 찼습니다. 잠시 후 재시도하세요.");return;}
     this.authenticate(socket, state, row.player_id);
     sendResult(socket, requestId, { session: { playerId: row.player_id, nickname: row.nickname_display, token }, resumed: true });
     this.sendSnapshot(socket, row.player_id);
@@ -258,10 +291,18 @@ export class LobbyCoordinator {
     const playerId = state.playerId;
     if (!playerId) return;
     const nowIso = new Date().toISOString();
+    if(state.resultGameId){
+      this.db.prepare("UPDATE player_sessions SET result_access_revoked=1 WHERE player_id=?").run(playerId);
+      this.playerSockets.delete(playerId);state.playerId=null;delete state.resultGameId;this.requestWindows.delete(playerId);sendResult(socket,requestId,{ended:true});return;
+    }
+    if(this.db.prepare("SELECT 1 FROM games WHERE status='ACTIVE' AND (white_player_id=? OR black_player_id=?)").get(playerId,playerId)){
+      sendError(socket,requestId,"ACTIVE_GAME_REQUIRES_RESIGN","진행 중인 대국은 먼저 기권을 확인하고 결과를 받은 뒤 새 이용을 시작하세요.");return;
+    }
     this.terminatePendingState(playerId, nowIso);
-    this.db.prepare("UPDATE player_sessions SET ended_at_utc=? WHERE player_id=? AND ended_at_utc IS NULL").run(nowIso, playerId);
+    this.db.prepare("UPDATE player_sessions SET ended_at_utc=?,result_access_revoked=1 WHERE player_id=? AND ended_at_utc IS NULL").run(nowIso, playerId);
     this.playerSockets.delete(playerId);
     state.playerId = null;
+    this.requestWindows.delete(playerId);
     this.rooms.disconnect(playerId);
     sendResult(socket, requestId, { ended: true });
     this.releasePlayerName(playerId);
@@ -289,6 +330,7 @@ export class LobbyCoordinator {
       this.db.prepare("UPDATE player_sessions SET ended_at_utc=? WHERE player_id=? AND ended_at_utc IS NULL").run(endedAt, playerId);
       this.releasePlayerName(playerId);
       this.online.forgetPlayer(playerId);
+      this.requestWindows.delete(playerId);
       this.broadcastSnapshots();
       } catch { this.online.markUnavailable(); }
     }, this.timing.reconnectGraceMs);
@@ -353,9 +395,9 @@ export class LobbyCoordinator {
           (applicant_player_id=? OR acceptor_player_id=?)`).get(target, target) ||
           this.db.prepare("SELECT 1 FROM games WHERE status IN ('PREPARING','ACTIVE') AND (white_player_id=? OR black_player_id=?)").get(target, target);
         if (targetBusy) throw new LobbyError("PLAYER_UNAVAILABLE", "상대가 다른 신청에 응답 중이거나 대국 중입니다.");
-        const cooldown = this.db.prepare("SELECT requested_at_utc FROM challenge_cooldowns WHERE applicant_player_id=? AND acceptor_player_id=?")
+        const cooldown = this.db.prepare("SELECT max(updated_at_utc) AS requested_at_utc FROM challenges WHERE applicant_player_id=? AND acceptor_player_id=? AND status<>'PENDING'")
           .get(actor, target) as { requested_at_utc: string } | undefined;
-        if (cooldown && now.getTime() - Date.parse(cooldown.requested_at_utc) < this.timing.sameTargetCooldownMs) {
+        if (cooldown?.requested_at_utc && now.getTime() - Date.parse(cooldown.requested_at_utc) < this.timing.sameTargetCooldownMs) {
           throw new LobbyError("CHALLENGE_COOLDOWN", "같은 상대에게는 10초 뒤 다시 신청할 수 있습니다.");
         }
         this.db.prepare(`INSERT INTO challenges(challenge_id,applicant_player_id,acceptor_player_id,status,revision,created_at_utc,response_deadline_utc,updated_at_utc)
@@ -423,6 +465,7 @@ export class LobbyCoordinator {
       const occupied = this.db.prepare("SELECT 1 FROM games WHERE status IN ('PREPARING','ACTIVE') AND ((white_player_id IN (?,?) OR black_player_id IN (?,?))) LIMIT 1")
         .get(challenge.applicant_player_id, challenge.acceptor_player_id, challenge.applicant_player_id, challenge.acceptor_player_id);
       if (occupied) throw new LobbyError("PLAYER_IN_GAME", "참가자 중 한 명이 이미 대국 중입니다.");
+      try{assertGameCapacity(this.db);}catch{throw new LobbyError("GAME_CAPACITY","동시 대국 20판이 진행 중입니다. 잠시 후 재시도하세요.");}
       const state = JSON.stringify({ status: "PREPARING", board: createRuleGame().board, ready: { white: false, black: false } });
       this.db.prepare(`INSERT INTO games(game_id,challenge_id,white_player_id,black_player_id,status,revision,state_json,created_at_utc,updated_at_utc)
         VALUES(?,?,?,?, 'PREPARING',0,?,?,?)`).run(gameId, challengeId, challenge.applicant_player_id, challenge.acceptor_player_id, state, nowIso, nowIso);
@@ -505,6 +548,16 @@ export class LobbyCoordinator {
   private sendSnapshot(socket: WebSocket, playerId: string): void {
     const row = this.db.prepare("SELECT nickname_display FROM players WHERE player_id=?").get(playerId) as { nickname_display: string } | undefined;
     if (!row) return;
+    const resultId=this.sockets.get(socket)?.resultGameId;
+    if(resultId){
+      const game=this.db.prepare(`SELECT g.*,w.nickname_display AS whiteName,b.nickname_display AS blackName FROM games g
+        JOIN players w ON w.player_id=g.white_player_id JOIN players b ON b.player_id=g.black_player_id
+        WHERE game_id=? AND status IN ('FINISHED','ABORTED') AND ended_at_utc>? AND (white_player_id=? OR black_player_id=?)`).get(resultId,new Date(Date.now()-LIMITS.retentionMs).toISOString(),playerId,playerId) as {white_player_id:string;whiteName:string;blackName:string}|undefined;
+      if(!game){socket.close(4004,"Stored result expired");return;}
+      send(socket,{type:"lobby.snapshot",snapshot:{me:{playerId,nickname:row.nickname_display,state:"RESULT_QUERY_ONLY"},players:[],challenges:[],
+        game:{...this.online.snapshot(resultId),gameId:resultId,color:game.white_player_id===playerId?"WHITE":"BLACK",opponentName:game.white_player_id===playerId?game.blackName:game.whiteName,
+          whiteName:game.whiteName,blackName:game.blackName,messages:[],resultRoom:null,readOnlyResult:true},serverTimeUtc:new Date().toISOString()}});return;
+    }
     const challenges = this.db.prepare(`SELECT challenge_id AS challengeId, applicant_player_id AS applicantPlayerId,
       acceptor_player_id AS acceptorPlayerId,status,response_deadline_utc AS responseDeadlineUtc FROM challenges
       WHERE status='PENDING' AND (applicant_player_id=? OR acceptor_player_id=?) ORDER BY created_at_utc`).all(playerId, playerId) as LobbySnapshot["challenges"];
@@ -573,7 +626,8 @@ export class LobbyCoordinator {
   }
 
   private releaseExpiredClaims(nowIso: string): void {
-    this.db.prepare("UPDATE player_sessions SET ended_at_utc=? WHERE ended_at_utc IS NULL AND expires_at_utc<=?").run(nowIso, nowIso);
+    this.db.prepare(`UPDATE player_sessions SET ended_at_utc=? WHERE ended_at_utc IS NULL AND expires_at_utc<=? AND NOT EXISTS(
+      SELECT 1 FROM games g WHERE g.status IN ('PREPARING','ACTIVE') AND (g.white_player_id=player_sessions.player_id OR g.black_player_id=player_sessions.player_id))`).run(nowIso, nowIso);
     const players = this.db.prepare(`SELECT p.player_id FROM players p WHERE
       NOT EXISTS(SELECT 1 FROM player_sessions s WHERE s.player_id=p.player_id AND s.ended_at_utc IS NULL AND s.expires_at_utc>?) AND
       NOT EXISTS(SELECT 1 FROM challenges c WHERE c.status='PENDING' AND (c.applicant_player_id=p.player_id OR c.acceptor_player_id=p.player_id)) AND
@@ -641,6 +695,10 @@ export class LobbyCoordinator {
     }
     if (expiredIds.length || cancelledCount || startedCount) this.broadcastSnapshots();
     this.releaseExpiredClaims(nowIso);
+    if(monoNow>=this.nextPurge){
+      purgeExpiredRecords(this.db,now.getTime(),[...this.playerSockets.keys(),...this.graceTimers.keys()]);
+      this.nextPurge=monoNow+60_000;
+    }
   }
 }
 

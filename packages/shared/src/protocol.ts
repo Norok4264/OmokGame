@@ -37,7 +37,7 @@ export type ClientMessage =
       x: number;
       y: number;
     })
-  | (ClientEnvelope & { type: "game.retry.request"; gameId: GameId })
+  | (ClientEnvelope & { type: "game.retry.request" | "game.retry.cancel"; gameId: GameId })
   | (ClientEnvelope & {
       type: "game.retry.respond";
       gameId: GameId;
@@ -200,6 +200,7 @@ export function parseClientMessage(input: unknown): ParseResult<ClientMessage> {
     case "game.snapshot.request":
     case "game.result.leave":
     case "game.retry.request":
+    case "game.retry.cancel":
     case "game.cancel":
       if (!text(value.gameId, 128)) return bad("gameId");
       break;

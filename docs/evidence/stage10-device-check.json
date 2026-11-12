@@ -1,0 +1,11 @@
+{
+  "atUtc": "2026-11-12T06:47:41.8075375Z",
+  "scope": "Installed Windows browser metadata and adb attached-device inventory; not separate PC or Android test",
+  "chromeFileVersion": "157.0.8103.51",
+  "edgeFileVersion": "157.0.4341.46",
+  "adbVersion": "Android Debug Bridge version 1.0.41\r\nVersion 37.0.1-15733141\r\nInstalled as C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe\r\nRunning on Windows 10.0.22631",
+  "adbDevices": "List of devices attached",
+  "androidChromeVersion": null,
+  "separatePcTested": false,
+  "trustedHttpsVerified": false
+}

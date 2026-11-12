@@ -17,7 +17,7 @@ it("A07/A08 actual WebSocket rematch, isolated Korean chat, duplicates, new prep
   const db=new Database(":memory:");const app=createApplicationServer(db);app.httpServer.listen(0,"127.0.0.1");await once(app.httpServer,"listening");
   const address=app.httpServer.address();if(!address||typeof address==="string")throw new Error("TCP address missing");
   const clients:Client[]=[];
-  async function login(name:string){const socket=new WebSocket(`ws://127.0.0.1:${(address as any).port}/ws`);const client=new Client(socket);clients.push(client);await once(socket,"open");await client.wait(m=>m.type==="server.hello");const result=await client.send("session.start",`login-${name}`,{nickname:name});return {client,id:result.data.session.playerId};}
+  async function login(name:string){const socket=new WebSocket(`ws://127.0.0.1:${(address as any).port}/ws`, {origin:"http://127.0.0.1:5173"});const client=new Client(socket);clients.push(client);await once(socket,"open");await client.wait(m=>m.type==="server.hello");const result=await client.send("session.start",`login-${name}`,{nickname:name});return {client,id:result.data.session.playerId};}
   try{
     const {client:w,id:wid}=await login("White"),{client:b,id:bid}=await login("Black"),{client:outsider}=await login("Observer");
     const challenge=await w.send("challenge.create","invite",{targetPlayerId:bid});const accepted=await b.send("challenge.respond","accept",{challengeId:challenge.data.challengeId,accept:true});

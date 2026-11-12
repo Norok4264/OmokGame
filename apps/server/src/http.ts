@@ -5,6 +5,8 @@ import { isDatabaseReady } from "./storage/database.js";
 import { LobbyCoordinator, type LobbyTiming } from "./lobby.js";
 import { reconcileUnfinished } from "./storage/recovery.js";
 import { runMigrations } from "./storage/migrations.js";
+import { DEVELOPMENT_ORIGINS, LIMITS } from "./limits.js";
+import { purgeExpiredRecords } from "./storage/retention.js";
 
 export interface ApplicationServer {
   httpServer: Server;
@@ -40,13 +42,17 @@ function handleHttpRequest(request: IncomingMessage, response: ServerResponse, d
   respondJson(response, 404, { error: { code: "NOT_FOUND", message: "Route not found" } });
 }
 
-export function createApplicationServer(db: SqliteDatabase, timing?: LobbyTiming): ApplicationServer {
+export function createApplicationServer(db: SqliteDatabase, timing?: LobbyTiming, allowedOrigins: readonly string[] = DEVELOPMENT_ORIGINS): ApplicationServer {
   runMigrations(db);
   reconcileUnfinished(db); // before listen/upgrade/readiness are exposed
+  purgeExpiredRecords(db);
   const httpServer = createServer((request, response) => handleHttpRequest(request, response, db, () => lobby.isReady()));
-  const webSocketServer = new WebSocketServer({ noServer: true, maxPayload: 8 * 1024, perMessageDeflate: false });
+  const webSocketServer = new WebSocketServer({ noServer: true, maxPayload: LIMITS.inputBytes, perMessageDeflate: false });
 
   httpServer.on("upgrade", (request, socket, head) => {
+    if(!request.headers.origin || !allowedOrigins.includes(request.headers.origin)){
+      socket.end("HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n");return;
+    }
     const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
     if (pathname !== "/ws" || !lobby.isReady()) {
       socket.destroy();

@@ -1,6 +1,7 @@
 import { loadEnvFile } from "node:process";
 import { createApplicationServer } from "./http.js";
 import { openDatabase } from "./storage/database.js";
+import { DEVELOPMENT_ORIGINS } from "./limits.js";
 
 try {
   loadEnvFile(".env");
@@ -17,7 +18,8 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 }
 
 const db = openDatabase(databasePath);
-const { httpServer, webSocketServer, lobby } = createApplicationServer(db);
+const origins=process.env.ALLOWED_ORIGINS?.split(",").map(value=>value.trim()).filter(Boolean)??DEVELOPMENT_ORIGINS;
+const { httpServer, webSocketServer, lobby } = createApplicationServer(db,undefined,origins);
 
 httpServer.listen(port, host, () => {
   process.stdout.write(`danpan-omok server listening on http://${host}:${port}\n`);

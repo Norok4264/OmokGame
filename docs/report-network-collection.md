@@ -96,7 +96,7 @@ sequenceDiagram
   end
 ~~~
 
-현재 코드는 commit 뒤 broadcastSnapshots를 먼저 호출한 다음 요청자에게 command.result를 보낸다. 따라서 서버가 승인한 snapshot을 받은 돌 표시가 개별 command.result보다 먼저일 수 있다. commit 전 낙관적 돌 표시를 의미하지 않는다. 같은 requestId 재확인은 기존 승인을 반환하며 새 착수처럼 차례를 다시 검사하지 않는다.
+현재 코드는 commit 뒤 방 참가자 snapshot을 먼저 전달한 다음 요청자에게 command.result를 보낸다. 진행 중 착수는 두 참가자에게만 보내며 접속/대기/종료 변경은 전체 목록을 갱신한다. 따라서 서버가 승인한 snapshot을 받은 돌 표시가 개별 command.result보다 먼저일 수 있다. commit 전 낙관적 돌 표시를 의미하지 않는다. 같은 requestId 재확인은 기존 승인을 반환하며 새 착수처럼 차례를 다시 검사하지 않는다.
 
 command.result 수신 뒤 LobbyClient가 lobby.snapshot.request를 추가로 보낼 수 있다. 같은 마지막 수가 여러 snapshot에 보인다고 착수가 반복된 것은 아니다. 실제 새 착수 수는 성공 승인/revision/game_moves와 함께 확인한다. chat sequence도 game revision과 구별한다.
 
@@ -211,3 +211,5 @@ WSS는 WebSocket을 TLS로 보호한다. 일반적인 외부 구간 캡처에서
 | 수집 절차 P10 | 본 문서 Wireshark 인터페이스·필터·시연 안내 | 수집 안내만 작성. pcapng/packet count/stream/IP/MAC 관측값 없음 |
 
 본 문서의 테스트 수치와 안전한 앱 관측은 9단계 실행 기록을 따르고, 실제 패킷 자료는 추후 확보했을 때만 docs/evidence-index.md에 별도 등록한다.
+
+10단계 추가: E11은 최종 빌드 0.1.0-8f52d08ed448ebe3의 실제 앱 관측이다. Origin/상한/보관 및 검증 범위는 integration-validation.md 참조. 본 문서의 E10 링크는 9단계 당시 기록이며 새 패킷 수집을 뜻하지 않는다.

@@ -43,6 +43,8 @@ data/
 *.sqlite3
 *.db
 *.db-journal
+*.sqlite-journal
+*.sqlite3-journal
 *.sqlite-wal
 *.sqlite-shm
 *.sqlite3-wal

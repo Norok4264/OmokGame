@@ -1,0 +1,172 @@
+{
+  "appVersion": "0.1.0",
+  "origin": "http://127.0.0.1:4173",
+  "profile": "C:\\오목게임\\.cache\\offline-evidence-1794465724655",
+  "startedAt": "2026-11-12T06:42:04.656Z",
+  "kind": "isolated headless desktop browser; not Android",
+  "onlineRequests": [],
+  "completed": true,
+  "browser": "157.0.4341.46",
+  "build": {
+    "version": "0.1.0-8f52d08ed448ebe3",
+    "files": [
+      {
+        "url": "/assets/bot.worker-2BxL8Zow.js",
+        "sha256": "1dfe4bcf4f5b5408ad284522aae3f741705be243b07618eb3d1a714643c8aba1"
+      },
+      {
+        "url": "/assets/index-B8LoMGfS.css",
+        "sha256": "1b8a6576799cd36afe03191805f0246501a8431625f0cb9248f41a7bc097f4f0"
+      },
+      {
+        "url": "/assets/index-CL44kvRw.js",
+        "sha256": "98886309da2984dd0e7b0d137a1dff18950b390e016172724f5e0f3a1444804d"
+      },
+      {
+        "url": "/fonts/NotoSansKR.ttf",
+        "sha256": "194018e6b2b293a7964f037b25c0249ce1418bc9ab3c971060a03aa57861e252"
+      },
+      {
+        "url": "/fonts/OFL.txt",
+        "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+      },
+      {
+        "url": "/icons/omok-192.png",
+        "sha256": "06a187224e002c2c178d82a8a73a51ae7447be661259185d762c4dca29b860d3"
+      },
+      {
+        "url": "/icons/omok-512.png",
+        "sha256": "425c7ff18f81b60e06cfb998878a04d74bb3888a8e9030e5bc22f865d5abbcf5"
+      },
+      {
+        "url": "/index.html",
+        "sha256": "15b09e64c92570693e98ae64297deea48098d54382dd1ef26c216e5f272c2dc9"
+      },
+      {
+        "url": "/manifest.webmanifest",
+        "sha256": "f73f24eab5078f4cacf1333128d6b61d590ad24db88c0ac15273e0dd6a2a5c90"
+      },
+      {
+        "url": "/omok-hero.svg",
+        "sha256": "ee99a86b13c86d4abe5b24915c7740d9bf111e9dc7b1f4b8499900468d230593"
+      },
+      {
+        "url": "/omok-icon.svg",
+        "sha256": "1c71f08e5b274177fb8ee8cf88496cef2a4f2db58f3dfd63fc755f6d26a3594f"
+      }
+    ]
+  },
+  "cacheKeys": [
+    "/assets/bot.worker-2BxL8Zow.js",
+    "/assets/index-B8LoMGfS.css",
+    "/assets/index-CL44kvRw.js",
+    "/fonts/NotoSansKR.ttf",
+    "/fonts/OFL.txt",
+    "/icons/omok-192.png",
+    "/icons/omok-512.png",
+    "/index.html",
+    "/manifest.webmanifest",
+    "/omok-hero.svg",
+    "/omok-icon.svg",
+    "/offline-manifest.json"
+  ],
+  "gameId": "2766ef67-63a6-45f4-b23f-f98fe4765242",
+  "workerSamples": [
+    {
+      "kind": "warmup",
+      "revision": 0,
+      "elapsedMs": 0.19999999925494194,
+      "roundTripMs": 7.200000002980232
+    },
+    {
+      "kind": "warmup",
+      "revision": 0,
+      "elapsedMs": 0.19999999925494194,
+      "roundTripMs": 9
+    },
+    {
+      "kind": "move",
+      "revision": 0,
+      "elapsedMs": 0.20000000298023224,
+      "roundTripMs": 10.5
+    },
+    {
+      "kind": "warmup",
+      "revision": 0,
+      "elapsedMs": 0.19999999925494194,
+      "roundTripMs": 8.200000002980232
+    },
+    {
+      "kind": "move",
+      "revision": 2,
+      "elapsedMs": 1.2999999970197678,
+      "roundTripMs": 17
+    },
+    {
+      "kind": "move",
+      "revision": 4,
+      "elapsedMs": 1.300000000745058,
+      "roundTripMs": 12.200000002980232
+    },
+    {
+      "kind": "move",
+      "revision": 6,
+      "elapsedMs": 1.2999999970197678,
+      "roundTripMs": 12.599999997764826
+    },
+    {
+      "kind": "move",
+      "revision": 8,
+      "elapsedMs": 0.8999999985098839,
+      "roundTripMs": 11.100000001490116
+    }
+  ],
+  "restored": true,
+  "whiteTurnRestoreDidNotRecalculate": true,
+  "finalMoves": [
+    {
+      "x": 7,
+      "y": 7
+    },
+    {
+      "x": 0,
+      "y": 0
+    },
+    {
+      "x": 7,
+      "y": 6
+    },
+    {
+      "x": 1,
+      "y": 0
+    },
+    {
+      "x": 7,
+      "y": 8
+    },
+    {
+      "x": 2,
+      "y": 0
+    },
+    {
+      "x": 7,
+      "y": 5
+    },
+    {
+      "x": 3,
+      "y": 0
+    },
+    {
+      "x": 7,
+      "y": 9
+    }
+  ],
+  "finalResult": "오목 봇 승리\n\n기기 내부의 동일 자유룰로 판정했습니다.\n\n재경기초기 화면으로 · 저장판 삭제",
+  "observedBotMaxRoundTripMs": 17,
+  "botGoalObserved": true,
+  "finishedRestoreDidNotRecalculate": true,
+  "exitDeleted": true,
+  "replayNewId": true,
+  "botTurnRestoredExactlyOnce": true,
+  "finishedAt": "2026-11-12T06:42:08.250Z"
+}

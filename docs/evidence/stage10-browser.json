@@ -1,0 +1,146 @@
+{
+  "appVersion": "0.1.0",
+  "startedAt": "2026-11-12T06:52:30.573Z",
+  "kind": "isolated desktop Chrome/Edge on ONE host, not PC-PC or Android",
+  "completed": true,
+  "chrome": "157.0.8103.51",
+  "edge": "157.0.4341.46",
+  "build": "0.1.0-8f52d08ed448ebe3",
+  "previewNotCommitted": true,
+  "arrowAndEscape": true,
+  "safeTextAndSyntheticComposition": true,
+  "chatColors": {
+    "mine": "rgb(29, 78, 216)",
+    "theirs": "rgb(185, 28, 28)"
+  },
+  "generalButtons": {
+    "count": 4,
+    "minWidth": 65.453125,
+    "minHeight": 48
+  },
+  "solidColorContrast": {
+    "mine": 6.226950689845794,
+    "theirs": 6.011779093532914,
+    "bodyBase": 13.253301308989693,
+    "scope": "solid base color pairs only; not every gradient or masked edge pixel, not WCAG certification"
+  },
+  "pastMessageScrollAndHide": true,
+  "mobileOnlineEmulation": {
+    "overflow": false,
+    "chatBelowBoard": true,
+    "inputBelowMessages": true,
+    "isAndroid": false,
+    "keyboard": "physical Android keyboard not tested"
+  },
+  "keyboardEnterMove": true,
+  "refreshPreservedDeadline": true,
+  "popupClosedAndReopened": true,
+  "injectedPngFailureRetainedResult": true,
+  "actualPngDownloadedAndOpened": {
+    "file": "stage10-downloaded-result.png",
+    "width": 1100,
+    "height": 1500
+  },
+  "timingA": {
+    "ack": [
+      13.600000001490116,
+      12.199999999254942,
+      12.199999999254942,
+      12.200000002980232,
+      20.099999997764826
+    ],
+    "receiptToDom": [
+      {
+        "revision": 2,
+        "elapsedMs": 2.599999997764826
+      },
+      {
+        "revision": 3,
+        "elapsedMs": 1.5999999977648258
+      },
+      {
+        "revision": 4,
+        "elapsedMs": 1.5
+      },
+      {
+        "revision": 5,
+        "elapsedMs": 1.3999999985098839
+      },
+      {
+        "revision": 6,
+        "elapsedMs": 1.6000000014901161
+      },
+      {
+        "revision": 7,
+        "elapsedMs": 1.800000000745058
+      },
+      {
+        "revision": 8,
+        "elapsedMs": 2
+      },
+      {
+        "revision": 9,
+        "elapsedMs": 1.5999999977648258
+      },
+      {
+        "revision": 10,
+        "elapsedMs": 9.699999999254942
+      }
+    ]
+  },
+  "timingB": {
+    "ack": [
+      13.899999998509884,
+      12.300000000745058,
+      13.899999998509884,
+      13.200000002980232
+    ],
+    "receiptToDom": [
+      {
+        "revision": 2,
+        "elapsedMs": 18.899999998509884
+      },
+      {
+        "revision": 3,
+        "elapsedMs": 1.5
+      },
+      {
+        "revision": 4,
+        "elapsedMs": 1.3999999985098839
+      },
+      {
+        "revision": 5,
+        "elapsedMs": 1.300000000745058
+      },
+      {
+        "revision": 6,
+        "elapsedMs": 1.3999999985098839
+      },
+      {
+        "revision": 7,
+        "elapsedMs": 1.2999999970197678
+      },
+      {
+        "revision": 8,
+        "elapsedMs": 1.699999999254942
+      },
+      {
+        "revision": 9,
+        "elapsedMs": 1.3999999985098839
+      },
+      {
+        "revision": 10,
+        "elapsedMs": 7.199999999254942
+      }
+    ]
+  },
+  "timingScope": "ACK: each sender's performance.now send→command.result. Receipt→DOM: same recipient clock from snapshot event to matching stone DOM mutation; not paint completion, not A-clock minus B-clock. B arrays restart on reload. Small local functional samples, not external target certification.",
+  "winRematchAndFinalImmutable": true,
+  "replacedTabStopped": true,
+  "mobileEmulation": {
+    "width": 360,
+    "overflow": false,
+    "isAndroid": false
+  },
+  "finishedAt": "2026-11-12T06:52:39.558Z"
+}

@@ -4,6 +4,7 @@ import {readFile,mkdir,writeFile} from "node:fs/promises";
 import {resolve,extname,sep} from "node:path";
 import assert from "node:assert/strict";
 const require=createRequire(process.env.TEST_NODE_MODULES?resolve(process.env.TEST_NODE_MODULES,"package.json"):resolve("package.json"));const {chromium}=require("playwright");
+const tag=process.env.TEST_EVIDENCE_TAG??"stage8";if(!/^[a-z0-9-]+$/.test(tag))throw new Error("Invalid tag");
 const oldRoot=resolve(process.env.TEST_OLD_BUILD??".cache/stage8-old-f4e221f7555b9dff"),newRoot=resolve("apps/web/dist");let root=oldRoot;
 const mime={".html":"text/html",".js":"text/javascript",".css":"text/css",".json":"application/json",".webmanifest":"application/manifest+json",".ttf":"font/ttf",".png":"image/png",".svg":"image/svg+xml",".txt":"text/plain"};
 const server=createServer(async(req,res)=>{try{const pathname=decodeURIComponent(new URL(req.url,"http://localhost").pathname);const path=resolve(root,"."+(pathname==="/"?"/index.html":pathname));if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}const bytes=await readFile(path);res.writeHead(200,{"Content-Type":mime[extname(path)]??"application/octet-stream","Cache-Control":"no-store"});res.end(bytes);}catch{res.writeHead(404).end();}});
@@ -31,4 +32,4 @@ try{
   report.appliedAfterHome=true;report.completed=true;report.browser=context.browser()?.version();report.finishedAt=new Date().toISOString();
   console.log(JSON.stringify(report));
 }catch(error){report.error=String(error.stack??error);throw error;}
-finally{await context?.close();await new Promise(r=>server.close(r));await mkdir("docs/evidence",{recursive:true});await writeFile("docs/evidence/stage8-update.json",JSON.stringify(report,null,2));}
+finally{await context?.close();await new Promise(r=>server.close(r));await mkdir("docs/evidence",{recursive:true});await writeFile(`docs/evidence/${tag}-update.json`,JSON.stringify(report,null,2));}

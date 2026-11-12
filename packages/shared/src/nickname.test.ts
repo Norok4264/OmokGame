@@ -12,8 +12,13 @@ describe("nickname normalization and policy", () => {
     },
   );
 
-  it("accepts Korean, letters, digits, underscore, and hyphen in 2-12 code points", () => {
+  it("accepts Korean, letters, digits, underscore, and hyphen in 2-12 graphemes", () => {
     expect(validateNickname("바둑_12")).toMatchObject({ ok: true, display: "바둑_12" });
     expect(validateNickname("오목-친구").ok).toBe(true);
+  });
+  it("counts combining characters as visible graphemes and rejects bot names",()=>{
+    expect(validateNickname("a\u0308".repeat(12)).ok).toBe(true);
+    expect(validateNickname("x\u0308").ok).toBe(false);
+    expect(validateNickname("bot").ok).toBe(false);expect(validateNickname("봇").ok).toBe(false);
   });
 });

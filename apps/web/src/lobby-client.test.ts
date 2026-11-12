@@ -28,6 +28,17 @@ async function authenticate(socket:FakeSocket, start:Promise<unknown>) {
   }};
 }
 describe("browser recovery ordering and stale socket isolation",()=>{
+  it("B11 explicitly requests an update on an incompatible server protocol without reconnecting",async()=>{
+    const client=new LobbyClient(),start=client.start("Alice"),rejected=expect(start).rejects.toThrow("업데이트"),socket=FakeSocket.all[0]!;
+    socket.readyState=1;socket.emit("open");socket.message({type:"server.hello",protocolVersion:99});await rejected;
+    await vi.advanceTimersByTimeAsync(70000);expect(FakeSocket.all).toHaveLength(1);expect(socket.sent).toHaveLength(0);client.stop();
+  });
+  it("B05 stops input and reconnect attempts after the server replaces this tab",async()=>{
+    const client=new LobbyClient(),statuses:string[]=[];client.onStatus=(_s,m)=>{if(m)statuses.push(m);};
+    const start=client.start("Alice"),socket=FakeSocket.all[0]!;await(await authenticate(socket,start)).finish();
+    socket.readyState=3;socket.emit("close",{code:4002});await vi.advanceTimersByTimeAsync(70000);
+    expect(FakeSocket.all).toHaveLength(1);expect(statuses.join()).toContain("다른 창");await expect(client.request("lobby.snapshot.request")).rejects.toThrow();client.stop();
+  });
   beforeEach(()=>{
     communicationLog.clear();
     vi.useFakeTimers(); FakeSocket.all=[];

@@ -72,3 +72,9 @@ PWA 경로에는 Android Studio·Gradle·JDK·SDK·adb가 빌드 필수 항목�
 7단계(2026-11-12): 의존성·lockfile 유지. migration 3/80개 테스트/타입·빌드 및 실제 localhost readyz 200 확인. Windows Chrome 창의 Computer Use 상태 조회는 현재 URL을 확인할 수 없어 정책 검사에서 중단됨. 브라우저 조작·실제 IME·다운로드 파일 열기·Android 검증을 수행했다고 기록하지 않는다.
 
 8단계(2026-11-12): 기존 사용자 창과 분리한 .cache 프로필의 headless Chrome 157.0.8103.51 / Edge 157.0.4341.42로 localhost 최종 빌드를 실행했다. 네트워크는 브라우저 context offline 에뮬레이션. 실제 Android/신뢰 HTTPS는 제공·확인되지 않았으므로 11단계에서 반드시 재검증한다. bundled Playwright/Sharp를 시험·에셋 rasterize에 사용했으며 프로젝트 패키지 버전/lockfile은 변경하지 않았다. 공식 Noto Sans KR/OFL과 PNG 아이콘은 프로젝트 공개 자원으로 포함했다. stage8-solo-offline.md와 실제 JSON 참조.
+
+## 10단계 최종 실제 확인
+
+2026-11-12 Codex 셸의 Windows 10.0.22631/PowerShell7.6.9, Node24.22.1/Git2.54.0 유지. 최종 headless 실제 실행 Chrome157.0.8103.51/Edge157.0.4341.46. 초기 Edge42→최종46 변경은 관찰값이며 앱 의존성을 업데이트한 것이 아니다. 실제 adb1.0.41/platform-tools37.0.1-15733141의 devices -l은 빈 목록이었다. Android Chrome 버전은 미확인. [장비/도구 JSON](evidence/stage10-repository-environment.json), [브라우저 파일/adb 원문](evidence/stage10-device-check.json), [통합 결과](integration-validation.md).
+
+npm PATH 미확인 상태에서 `node scripts/verify-integrated.mjs`로 고정 설치본의 타입/테스트/빌드를 수행했다. 22개 파일115개 테스트 통과. 별도 PC/Android/신뢰 HTTPS는 확보되지 않았으며 G11 게이트로 남긴다. PWA이므로 Android Studio·JDK·Gradle은 빌드 필수 아님이며 변경하지 않았다.

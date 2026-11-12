@@ -15,6 +15,15 @@ function setup() {
   return {db,online,rooms,present,end,send};
 }
 describe("result rooms, rematches and ephemeral chat",()=>{
+  it("A07 requester cancellation is persisted, replayable and imposes a 10-second retry cooldown",()=>{
+    const s=setup();try{s.end();s.send("w","game.retry.request","request");expect(()=>s.send("b","game.retry.cancel","unauthorized")).toThrow("REMATCH_CLOSED");
+      expect(s.send("w","game.retry.cancel","cancel")).toMatchObject({status:"CANCELLED"});expect(s.send("w","game.retry.cancel","cancel")).toMatchObject({replayed:true});
+      expect(()=>s.send("w","game.retry.request","too-early")).toThrow("REMATCH_COOLDOWN");advance(10000);expect(s.send("w","game.retry.request","later")).toMatchObject({status:"PENDING"});
+    }finally{s.db.close();}
+  });
+  it("B12 discards chat immediately once both players leave the result room",()=>{
+    const s=setup();try{s.send("b","chat.send","c",{messageId:"c",body:"hello"});s.end();s.send("w","game.result.leave","lw");expect(s.rooms.metadata("g","b").messages).toHaveLength(1);s.send("b","game.result.leave","lb");expect(s.rooms.metadata("g","b").messages).toHaveLength(0);}finally{s.db.close();}
+  });
   beforeEach(()=>{vi.useFakeTimers({toFake:["Date","performance"]});vi.setSystemTime(new Date("2026-11-12T00:00:00Z"));});
   afterEach(()=>vi.useRealTimers());
   const advance=(ms:number)=>{vi.setSystemTime(Date.now()+ms);vi.spyOn(performance,"now").mockReturnValue(performance.now()+ms);};
@@ -49,10 +58,11 @@ describe("result rooms, rematches and ephemeral chat",()=>{
     const s=setup();try{
       s.end();const expiry=s.rooms.metadata("g","w").resultRoom!.expiresAtUtc;
       s.send("w","game.retry.request","r1");s.send("b","game.retry.respond","no",{accept:false});
+      expect(()=>s.send("w","game.retry.request","early")).toThrow("REMATCH_COOLDOWN");advance(10000);
       s.send("w","game.retry.request","r2");s.present.delete("b");s.rooms.disconnect("b");
       expect(s.rooms.metadata("g","w").resultRoom!.canRequest).toBe(false);
       expect(()=>s.send("w","game.retry.request","r3")).toThrow("REMATCH_OPPONENT_UNAVAILABLE");
-      s.present.add("b");s.send("w","game.retry.request","r4");s.send("b","game.result.leave","leave");
+      advance(10000);s.present.add("b");s.send("w","game.retry.request","r4");s.send("b","game.result.leave","leave");
       expect(s.rooms.metadata("g","w").resultRoom).toMatchObject({expiresAtUtc:expiry,canRequest:false});
       expect(s.db.prepare("SELECT status FROM rematches").get()).toEqual({status:"CANCELLED"});
     }finally{s.db.close();}

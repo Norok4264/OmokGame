@@ -1,9 +1,9 @@
 # 통신 계약과 영속성 경계
 
 계약 버전: 1  
-상태: 기본 스키마, 런타임 메시지 검사, 순수 규칙 엔진, WebSocket 세션·대기열·신청·대국 준비 흐름 구현. 실시간 착수/채팅/진행 중 복구는 이후 단계
+상태: 서버 권위 착수·채팅·복구·결과/재도전·통신 관측 구현. 최신 보안/보관 계약은 아래 10단계를 따른다.
 
-`packages/shared/src/rules.ts`는 15×15 보드, 흑 선공/교대, 유효 좌표, 점유·차례·종료 검증, 네 방향의 5개 이상 연결 판정, 마지막 수 승리 우선 및 무승부 판정을 제공한다. 이 순수 모듈은 React, SQLite, WebSocket을 import하지 않으며 입력 상태를 변경하지 않는다. 온라인 서버가 착수를 승인하고 보드를 전달하는 실제 통합은 아직 구현되지 않았다.
+`packages/shared/src/rules.ts`는 15×15 보드, 흑 선공/교대, 유효 좌표, 점유·차례·종료 검증, 네 방향의 5개 이상 연결 판정, 마지막 수 승리 우선 및 무승부 판정을 제공한다. 이 순수 모듈은 React, SQLite, WebSocket을 import하지 않으며 입력 상태를 변경하지 않는다. 온라인 서버는 이 모듈로 최종 판정하고 commit 후 승인 보드를 전달한다.
 
 ## 상태 모델은 서로 분리
 
@@ -117,3 +117,13 @@ SQLite migration 3은 result_rooms와 rematches를 추가한다. chat 본문은 
 ## 9단계 관측 경계
 
 프로토콜 변경 없이 LobbyClient의 실제 JSON send/message를 계측한다. 통신 보기에는 원본 문자열 UTF-8 바이트 수와 허용된 안전 필드만 남긴다. 토큰/이름/채팅 본문은 제외, ID는 앞 8자, 채팅은 길이/sequence, 최근 200건 메모리만 유지한다. requestId별 같은 브라우저 performance.now 차이를 응용 왕복시간으로 표시하며 broadcast/상관관계가 없거나 같은 ID 중첩 응답은 숫자를 만들지 않는다. WS/TLS/TCP 헤더·재전송 포함 크기가 아니다. [보고서 구조/수집 절차](report-network-collection.md), [실제 확인](stage9-communication.md) 참조.
+
+## 10단계 보안·상한·보관 계약
+
+ALLOWED_ORIGINS는 정확 일치 목록이며 누락/null/다른 Origin은 HTTP upgrade 403으로 거절한다. 로컬 기본값은 localhost/127.0.0.1의 5173/4173만 허용하며 공개 HTTPS 출처는 배포 환경에서 별도 설정해야 한다. 8KiB maxPayload, 압축 끔, 세션당 10초 100건(교체 소켓에도 예산 유지), 연결당 1MiB 대기 초과 시 4008/정상 복구를 적용한다. 최초 인증 5초 유지. 새 세션 40개, PREPARING/ACTIVE 합 20판 상한이며 재도전도 검사한다.
+
+`game.retry.cancel`은 gameId/requestId로 신청자가 pending 재도전을 취소하는 추가 명령이다. 결과/성공 요청을 같은 transaction에 저장하며 동일 ID 재확인을 제공한다. 일반 신청과 재도전 모두 종료 후 재요청 10초다. 채팅 초과 오류에는 계산한 대기 초를 문구로 추가하며 sequence/revision은 독립이다.
+
+Migration 4는 rematches.resolved_at_utc/종료 정리 인덱스, 5는 player_sessions.result_access_revoked를 추가한다. 경기 복귀 종료와 결과 보관 조회를 분리한다. 복귀가 끝난 토큰이라도 취소되지 않은 해시+참가자+종료24h 이내 결과가 있으면 조회 전용 인증을 허용한다. snapshot의 readOnlyResult=true, RESULT_QUERY_ONLY presence, 비어 있는 목록/채팅·재도전 없음으로 전달한다. 기존 대국 입력/새 신청은 RESULT_QUERY_ONLY 오류. game.result.leave 또는 홈 초기화는 권한을 취소하며 초기 화면에서 새 이용한다. 활성 판의 토큰은 유휴 만료로 취소하지 않는다.
+
+종료 결과와 연관 replay/조회 링크는 종료24h 기준으로 시작 시 및 최대60초 주기 원자 정리한다. 조회 접근은 경계에서 즉시 차단한다. ACTIVE/PREPARING은 삭제하지 않는다. 채팅은 양쪽 결과방 퇴장 또는 종료5분 중 이른 때 정리한다. 앱에 영속 운영 로그 파일을 새로 만들지 않았으며 외부 로그 보관은 11단계 운영 확인 대상이다. 세부 실제 결과는 integration-validation.md 참조.
