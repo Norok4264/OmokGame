@@ -70,3 +70,5 @@ PWA 경로에는 Android Studio·Gradle·JDK·SDK·adb가 빌드 필수 항목�
 6단계(2026-11-12): 기존 Codex Windows/PowerShell·의존성·lockfile 유지. 타입 검사/61개 테스트/서버·Vite 빌드 성공, 메모리 SQLite 기반 실제 localhost health/readiness 200 확인. 사용자 PC 버전·실제 모바일/망 전환은 추가 검증하지 않음. docs/recovery-policy.md 참조.
 
 7단계(2026-11-12): 의존성·lockfile 유지. migration 3/80개 테스트/타입·빌드 및 실제 localhost readyz 200 확인. Windows Chrome 창의 Computer Use 상태 조회는 현재 URL을 확인할 수 없어 정책 검사에서 중단됨. 브라우저 조작·실제 IME·다운로드 파일 열기·Android 검증을 수행했다고 기록하지 않는다.
+
+8단계(2026-11-12): 기존 사용자 창과 분리한 .cache 프로필의 headless Chrome 157.0.8103.51 / Edge 157.0.4341.42로 localhost 최종 빌드를 실행했다. 네트워크는 브라우저 context offline 에뮬레이션. 실제 Android/신뢰 HTTPS는 제공·확인되지 않았으므로 11단계에서 반드시 재검증한다. bundled Playwright/Sharp를 시험·에셋 rasterize에 사용했으며 프로젝트 패키지 버전/lockfile은 변경하지 않았다. 공식 Noto Sans KR/OFL과 PNG 아이콘은 프로젝트 공개 자원으로 포함했다. stage8-solo-offline.md와 실제 JSON 참조.

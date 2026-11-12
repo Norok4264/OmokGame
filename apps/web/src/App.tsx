@@ -1,3 +1,7 @@
+import { SoloGame } from "./SoloGame.js";
+import { PwaStatus } from "./PwaStatus.js";
+import { loadSolo } from "./solo-state.js";
+import { updateLocked } from "./pwa.js";
 import { OnlineGame } from "./OnlineGame.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, PointerEvent, RefObject } from "react";
@@ -35,6 +39,8 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 export function App() {
+  const [booting,setBooting]=useState(true);
+  const [soloActive,setSoloActive]=useState(false);
   const dismissedGameRef = useRef<string | null>(null);
   const resultLeaveInFlightRef=useRef(new Set<string>());
   const [dismissedGame, setDismissedGame] = useState<string | null>(null);
@@ -132,6 +138,8 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const solo=loadSolo(); if(solo){setSoloActive(solo.state.status==="ACTIVE");setScreen("solo");setBooting(false);return;}
+    setBooting(false);
     const saved = loadSavedSession();
     if (saved) void connectLobby("", saved);
     return () => lobbyClientRef.current?.stop();
@@ -234,7 +242,7 @@ export function App() {
     }
   }, []);
 
-  const openQueue = () => { void connectLobby(nickname); };
+  const openQueue = () => { if(!updateLocked())void connectLobby(nickname); };
 
   const returnHome = async () => {
     const client = lobbyClientRef.current;
@@ -253,7 +261,7 @@ export function App() {
   };
 
   const runLobbyCommand = async (type: string, body: Record<string, unknown> = {}) => {
-    if (!lobbyClientRef.current || lobbyBusy) return;
+    if (updateLocked() || !lobbyClientRef.current || lobbyBusy) return;
     setLobbyBusy(true);
     setLobbyError("");
     try { await lobbyClientRef.current.request(type, body); setSelectedTarget(null); }
@@ -313,27 +321,17 @@ export function App() {
     }, botMode === "solo" ? 620 : 520);
   }, [animateAcceptedMove, showFinishedGame]);
 
-  const startSolo = async () => {
-    const client = lobbyClientRef.current;
-    if (client) {
-      try { await client.request("session.end"); } catch { /* local credentials are still cleared below */ }
-      client.stop();
-      lobbyClientRef.current = null;
-      clearSavedSession();
-      setLobbyState(null);
-      setEffectiveName("");
+  const startSolo = () => {
+    if(updateLocked())return;
+    const client=lobbyClientRef.current;
+    if(client){
+      client.onSnapshot=()=>{};client.onStatus=()=>{};
+      void client.request("session.end").catch(()=>{});
+      client.stop();lobbyClientRef.current=null;
     }
-    const fresh = createRuleGame();
-    setMode("solo");
-    setGame(fresh);
-    setScreen("solo");
-    setCandidate(null);
-    setResultDialog(null);
-    setSaveState("idle");
-    setNotice("혼자 놀기는 이 기기에서만 진행됩니다. 시간제한과 채팅은 없습니다.");
-    runBotMove(fresh, "BLACK", "solo");
+    clearSavedSession();setLobbyState(null);setNickname("");setEffectiveName("");
+    setGame(null);setResultDialog(null);setSoloActive(true);setScreen("solo");
   };
-
   const choosePoint = (point: Coordinate) => {
     if (!canChooseCandidate) return;
     if (game?.board[point.y]?.[point.x] !== null) {
@@ -544,6 +542,8 @@ export function App() {
       <div className="ambient ambient-one" aria-hidden="true" />
       <div className="ambient ambient-two" aria-hidden="true" />
 
+      <PwaStatus busy={booting || screen==="solo"&&soloActive || screen==="online"&&Boolean(lobbyState?.game&&["ACTIVE","PREPARING"].includes(lobbyState.game.status)) || Boolean(lobbyState?.challenges.length) || lobbyState?.game?.resultRoom?.retry?.status==="PENDING"}/>
+      {screen==="solo" && <SoloGame onActivity={setSoloActive} onLeave={()=>{setSoloActive(false);setNickname("");setScreen("home");}}/>}
       {screen === "home" && (
         <section className="home-screen" aria-labelledby="app-title">
           <header className="home-brand">

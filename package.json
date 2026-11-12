@@ -20,7 +20,8 @@
     "test": "tsc -p packages/shared/tsconfig.build.json && vitest run",
     "build": "tsc -p packages/shared/tsconfig.build.json && tsc -p apps/server/tsconfig.build.json && vite build apps/web --config apps/web/vite.config.ts",
     "start:server": "node apps/server/dist/index.js",
-    "check:server": "node scripts/check-server.mjs"
+    "check:server": "node scripts/check-server.mjs",
+    "preview:web": "vite preview apps/web --config apps/web/vite.config.ts --host 127.0.0.1 --port 4173 --strictPort"
   },
   "devDependencies": {
     "concurrently": "10.0.7",

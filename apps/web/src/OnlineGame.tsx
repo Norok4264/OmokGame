@@ -1,3 +1,4 @@
+import { updateLocked } from "./pwa.js";
 import { Chat, useRoomChatState } from "./Chat.js";
 import { renderResultImage, downloadResultImage } from "./result-image.js";
 import { useEffect, useRef, useState } from "react";
@@ -24,6 +25,7 @@ export function OnlineGame({ info, client, connected, leave, ownName, playerId }
     finally { clearTimeout(query); setPending(false); }
   }
   async function roomCommand(type:string, body:Record<string,unknown>={}, exiting=false) {
+    if(type.startsWith("game.retry")&&updateLocked())return;
     if(exiting && !connected){leave();return;}
     setPending(true); setNotice("");
     try { await client.request(type,{gameId:info.gameId,...body}); if(exiting)leave(); }

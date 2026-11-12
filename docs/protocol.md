@@ -108,3 +108,8 @@ Client→Server: game.result.leave(gameId), game.retry.request(gameId), game.ret
 lobby.snapshot.game에 whiteName/blackName/endedAtUtc/messages[]/resultRoom이 추가됐다. resultRoom은 expiresAtUtc, canRequest/canRespond, disabledReason, retry(requesterPlayerId/status/deadlineUtc/newGameId)를 포함한다.
 chat.send ACK는 messageId/sequence를 반환한다. 동일 참가자+messageId+본문은 원래 sequence로 재확인하며 다른 본문은 MESSAGE_ID_CONFLICT. 최근 100개 본문을 messages[]로 두 참가자에게만 전달한다. chat.message 이벤트를 별도로 emit하지 않는다. sequence와 game revision은 독립적이다. 보관·rate·종료 후 읽기/5분 정책은 stage7-results-chat-png.md 참조.
 SQLite migration 3은 result_rooms와 rematches를 추가한다. chat 본문은 DB에 저장하지 않는다.
+
+## 8단계 로컬 대국/서비스 워커 경계
+
+혼자 놀기는 서버 프로토콜을 사용하지 않는다. localStorage의 전용 키에서 착수 이력을 shared 규칙으로 재실행한다. Worker move/warmup 작업에는 gameId/revision/taskId를 쓰며 실제 대국 응답은 현재 작업과 모두 일치해야 적용한다. 대국 시간제한/채팅/외부 AI 호출은 없다.
+서비스 워커는 빌드 SHA 목록의 공개 정적 자원만 다룬다. 세션/인증/API/WS/실시간 상태는 precache 대상이 아니다. 업데이트는 모든 클라이언트의 idle 응답을 확인하고 적용하며 무응답/진행 중 판은 거부한다. 보관·업데이트·93개 테스트·11단계 Android HTTPS gate는 stage8-solo-offline.md 참조.

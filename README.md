@@ -1,6 +1,6 @@
 # 단판 오목
 
-PC Chrome·Edge와 Android Chrome을 대상으로 하는 반응형 PWA와 Node.js 게임 서버입니다. 프로젝트 기반, 공유 오목 규칙 모듈, 초기·대기열·온라인 대국 준비·결과·혼자 놀기 화면이 있습니다. 대기열, 세션, 접속자 선택, 신청/승낙/취소와 대국 준비는 실제 WebSocket·SQLite 상태에 연결되어 있습니다. 서버 권위 착수·60초 제한시간·승패·기권과 양측 결과 snapshot을 연결했습니다. 결과방·재도전·서버 채팅·결과 PNG를 연결했습니다. 실제 IME와 다운로드 PNG 파일 열기는 미검증입니다. 최신 검증 범위는 docs/stage7-results-chat-png.md를 참고하세요. 혼자 놀기는 로컬 봇과 진행하지만 PWA 오프라인 재실행 검증은 미완료입니다.
+PC Chrome·Edge와 Android Chrome을 대상으로 하는 반응형 PWA와 Node.js 게임 서버입니다. 프로젝트 기반, 공유 오목 규칙 모듈, 초기·대기열·온라인 대국 준비·결과·혼자 놀기 화면이 있습니다. 대기열, 세션, 접속자 선택, 신청/승낙/취소와 대국 준비는 실제 WebSocket·SQLite 상태에 연결되어 있습니다. 서버 권위 착수·60초 제한시간·승패·기권과 양측 결과 snapshot을 연결했습니다. 결과방·재도전·서버 채팅·결과 PNG를 연결했습니다. 실제 IME와 다운로드 PNG 파일 열기는 미검증입니다. 최신 검증 범위는 docs/stage7-results-chat-png.md를 참고하세요. 혼자 놀기는 Worker 봇·로컬 판 복구를 지원합니다. 최종 PWA 빌드의 오프라인 종료/재실행을 데스크톱 Chrome/Edge에서 확인했습니다. Android의 신뢰 HTTPS 실기는 11단계 필수 재검증입니다.
 
 ## 기술 구성
 
@@ -61,3 +61,5 @@ Codex 계정을 바꾸고 같은 PC 작업 폴더에서 이어갈 때는 `docs/a
 최신 복구: 15초 heartbeat, 30초 단절 확인, 60초 복귀 유예. 재인증 후 스냅샷으로 복구하며 기존 턴 마감을 유지합니다. 서버 재시작·DB 장애로 정상 진행하지 못한 ACTIVE는 시스템 무효 종료합니다. 검증 결과와 한계: [docs/recovery-policy.md](docs/recovery-policy.md).
 
 7단계 상세 구현·80개 테스트·브라우저 검증 제한: [docs/stage7-results-chat-png.md](docs/stage7-results-chat-png.md).
+
+최종 PWA 확인은 npm run build 후 npm run preview:web로 실행합니다. 오프라인 준비 완료를 확인한 후 네트워크 차단/재실행하세요. 최신 구현·실제 캡처·93개 테스트·Android gate: [docs/stage8-solo-offline.md](docs/stage8-solo-offline.md).

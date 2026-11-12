@@ -1,7 +1,7 @@
 # 증거 색인
 
 기록 시점: 2026-11-12 (Asia/Seoul)  
-앱 버전: 0.1.0 — 7단계 결과·재도전·채팅·PNG. 최신 E8 증거는 stage7-results-chat-png.md
+앱 버전: 0.1.0 / 0.1.0-a8604a3cbbe94a98 — 8단계. 최신 E9 원시 JSON·실제 캡처는 stage8-solo-offline.md
 
 ## 4단계 실제 WebSocket 증거
 
@@ -83,3 +83,6 @@
 
 ## 7단계 결과·재도전·채팅·PNG (최신)
 앱 0.1.0. 7-1~7-3 구현. 15개 파일/80개 테스트, 타입 검사·서버/웹 빌드 성공. 실제 두 WebSocket client로 재도전·새 판 준비와 한글 채팅을 확인했다. E8-01~E8-06, 실제 명령·정책·실패/미검증 항목은 [stage7-results-chat-png.md](stage7-results-chat-png.md)에 기록한다. 브라우저 현재 URL을 확인할 수 없어 Computer Use 정책 검사가 중단됐으며 실제 한글 조합키·다운로드 PNG 파일 열기는 미검증이다.
+
+## 8단계 혼자 놀기·오프라인 (최신)
+앱 0.1.0 / 빌드 0.1.0-a8604a3cbbe94a98. 19개 파일/93개 테스트 및 타입·빌드 성공. Chrome·Edge 격리 headless 최종 빌드에서 준비→offline→완전 종료/재실행→복구→9수 봇 승리, 백/흑/종료 복구·새 ID·저장 삭제를 실제 확인했다. 2창 업데이트 보류/홈 적용도 통과. E9-01~E9-06, 캡처/JSON은 [stage8-solo-offline.md](stage8-solo-offline.md). Android 신뢰 HTTPS 실기는 미검증이며 11단계에서 반드시 다시 확인해야 한다.

@@ -1,0 +1,172 @@
+{
+  "appVersion": "0.1.0",
+  "origin": "http://127.0.0.1:4173",
+  "profile": "C:\\오목게임\\.cache\\offline-evidence-1794457035644",
+  "startedAt": "2026-11-12T04:17:15.645Z",
+  "kind": "isolated headless desktop browser; not Android",
+  "onlineRequests": [],
+  "completed": true,
+  "browser": "157.0.4341.42",
+  "build": {
+    "version": "0.1.0-a8604a3cbbe94a98",
+    "files": [
+      {
+        "url": "/assets/bot.worker-2BxL8Zow.js",
+        "sha256": "1dfe4bcf4f5b5408ad284522aae3f741705be243b07618eb3d1a714643c8aba1"
+      },
+      {
+        "url": "/assets/index-DPNVuLud.js",
+        "sha256": "2ecdce055a12bab1097c13b0bd488e93584f62957d5313ca5f884f814e82549d"
+      },
+      {
+        "url": "/assets/index-DqllueX_.css",
+        "sha256": "3a4dca0ebbd4bdbc03b0bbef7c5f118551469f3feabcfc1b63dba130d54debe2"
+      },
+      {
+        "url": "/fonts/NotoSansKR.ttf",
+        "sha256": "194018e6b2b293a7964f037b25c0249ce1418bc9ab3c971060a03aa57861e252"
+      },
+      {
+        "url": "/fonts/OFL.txt",
+        "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9"
+      },
+      {
+        "url": "/icons/omok-192.png",
+        "sha256": "06a187224e002c2c178d82a8a73a51ae7447be661259185d762c4dca29b860d3"
+      },
+      {
+        "url": "/icons/omok-512.png",
+        "sha256": "425c7ff18f81b60e06cfb998878a04d74bb3888a8e9030e5bc22f865d5abbcf5"
+      },
+      {
+        "url": "/index.html",
+        "sha256": "6383f98d791d3720bd4dbfa005548f0d1483e65e037b22bfb8c76aadb7cfd232"
+      },
+      {
+        "url": "/manifest.webmanifest",
+        "sha256": "f73f24eab5078f4cacf1333128d6b61d590ad24db88c0ac15273e0dd6a2a5c90"
+      },
+      {
+        "url": "/omok-hero.svg",
+        "sha256": "ee99a86b13c86d4abe5b24915c7740d9bf111e9dc7b1f4b8499900468d230593"
+      },
+      {
+        "url": "/omok-icon.svg",
+        "sha256": "1c71f08e5b274177fb8ee8cf88496cef2a4f2db58f3dfd63fc755f6d26a3594f"
+      }
+    ]
+  },
+  "cacheKeys": [
+    "/assets/bot.worker-2BxL8Zow.js",
+    "/assets/index-DPNVuLud.js",
+    "/assets/index-DqllueX_.css",
+    "/fonts/NotoSansKR.ttf",
+    "/fonts/OFL.txt",
+    "/icons/omok-192.png",
+    "/icons/omok-512.png",
+    "/index.html",
+    "/manifest.webmanifest",
+    "/omok-hero.svg",
+    "/omok-icon.svg",
+    "/offline-manifest.json"
+  ],
+  "gameId": "01da0b42-8b8d-4250-a290-7bcd1b3b3157",
+  "workerSamples": [
+    {
+      "kind": "warmup",
+      "revision": 0,
+      "elapsedMs": 0.2999999988824129,
+      "roundTripMs": 6.600000001490116
+    },
+    {
+      "kind": "warmup",
+      "revision": 0,
+      "elapsedMs": 0.2999999988824129,
+      "roundTripMs": 7.799999998882413
+    },
+    {
+      "kind": "move",
+      "revision": 0,
+      "elapsedMs": 0.2000000011175871,
+      "roundTripMs": 9.399999998509884
+    },
+    {
+      "kind": "warmup",
+      "revision": 0,
+      "elapsedMs": 0.30000000074505806,
+      "roundTripMs": 9.699999999254942
+    },
+    {
+      "kind": "move",
+      "revision": 2,
+      "elapsedMs": 2.099999999627471,
+      "roundTripMs": 16.90000000037253
+    },
+    {
+      "kind": "move",
+      "revision": 4,
+      "elapsedMs": 1.300000000745058,
+      "roundTripMs": 11.099999999627471
+    },
+    {
+      "kind": "move",
+      "revision": 6,
+      "elapsedMs": 1.800000000745058,
+      "roundTripMs": 11.099999999627471
+    },
+    {
+      "kind": "move",
+      "revision": 8,
+      "elapsedMs": 1.099999999627471,
+      "roundTripMs": 11.300000000745058
+    }
+  ],
+  "restored": true,
+  "whiteTurnRestoreDidNotRecalculate": true,
+  "finalMoves": [
+    {
+      "x": 7,
+      "y": 7
+    },
+    {
+      "x": 0,
+      "y": 0
+    },
+    {
+      "x": 7,
+      "y": 6
+    },
+    {
+      "x": 1,
+      "y": 0
+    },
+    {
+      "x": 7,
+      "y": 8
+    },
+    {
+      "x": 2,
+      "y": 0
+    },
+    {
+      "x": 7,
+      "y": 5
+    },
+    {
+      "x": 3,
+      "y": 0
+    },
+    {
+      "x": 7,
+      "y": 9
+    }
+  ],
+  "finalResult": "오목 봇 승리\n\n기기 내부의 동일 자유룰로 판정했습니다.\n\n재경기초기 화면으로 · 저장판 삭제",
+  "observedBotMaxRoundTripMs": 16.90000000037253,
+  "botGoalObserved": true,
+  "finishedRestoreDidNotRecalculate": true,
+  "exitDeleted": true,
+  "replayNewId": true,
+  "botTurnRestoredExactlyOnce": true,
+  "finishedAt": "2026-11-12T04:17:19.302Z"
+}

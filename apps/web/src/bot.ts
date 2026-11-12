@@ -29,8 +29,34 @@ export function chooseBotMove(state: RuleGameState, botColor: StoneColor): Coord
   }
 
   return candidates.reduce((best, candidate) =>
-    score(state, candidate) > score(state, best) ? candidate : best,
+    evaluate(state, candidate, botColor) > evaluate(state, best, botColor) ? candidate : best,
   );
+}
+
+/** Contiguous open threats in all four directions; no Renju restrictions. */
+export function threatScore(state: RuleGameState, point: Coordinate, color: StoneColor): number {
+  let total=0;
+  for(const [dx,dy] of [[1,0],[0,1],[1,1],[1,-1]] as const){
+    let count=1,open=0;
+    for(const direction of [-1,1]){
+      let x=point.x+dx*direction,y=point.y+dy*direction;
+      while(x>=0&&x<15&&y>=0&&y<15&&state.board[y]?.[x]===color){count++;x+=dx*direction;y+=dy*direction;}
+      if(x>=0&&x<15&&y>=0&&y<15&&state.board[y]?.[x]===null)open++;
+    }
+    total+=count>=5?1000000:count===4?(open===2?100000:open===1?20000:0):count===3?(open===2?8000:open===1?700:0):count===2?(open===2?300:open===1?30:0):0;
+  }
+  return total;
+}
+function evaluate(state:RuleGameState,point:Coordinate,color:StoneColor):number {
+  const attack=threatScore(state,point,color),defense=threatScore(state,point,color==="BLACK"?"WHITE":"BLACK");
+  return Math.max(attack*1.05,defense)+attack*.1+defense*.1+score(state,point);
+}
+/** Constant bounded work on the UI thread if the worker fails or exceeds 2s. */
+export function legalFallback(state:RuleGameState):Coordinate|null {
+  if(state.status!=="ACTIVE"||state.nextColor!=="BLACK")return null;
+  const points:Coordinate[]=[];
+  for(let y=0;y<15;y++)for(let x=0;x<15;x++)if(state.board[y]?.[x]===null)points.push({x,y});
+  return points.sort((a,b)=>(Math.abs(7-a.x)+Math.abs(7-a.y))-(Math.abs(7-b.x)+Math.abs(7-b.y)))[0]??null;
 }
 
 function getCandidates(state: RuleGameState): Coordinate[] {

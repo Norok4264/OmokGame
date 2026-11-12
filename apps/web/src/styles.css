@@ -395,3 +395,11 @@ kbd { padding: 2px 5px; border: 1px solid rgba(101,75,55,.22); border-radius: 5p
 .online-chat-input input { min-width: 0; flex: 1; padding: 10px; min-height: 46px; border: 1px solid #88644c; border-radius: 8px; color: #352119; background: white; }
 .rematch-actions { margin: 16px 0; }
 .result-dialog { max-height: 90dvh; overflow-y: auto; }
+
+@font-face { font-family: "Danpan Noto"; src: url("/fonts/NotoSansKR.ttf") format("truetype"); font-style: normal; font-weight: 100 900; font-display: swap; }
+:root { font-family: "Danpan Noto", "Malgun Gothic", system-ui, sans-serif; }
+.offline-status { margin: 12px auto; padding: 12px; max-width: 860px; background: #fff7ef; border-radius: 12px; color: #473022; }
+.pwa-update-lock { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; background: rgba(255,241,230,.95); }
+.solo-board { display: grid; grid-template-columns: repeat(15,1fr); width: min(100%,650px); aspect-ratio: 1; margin: auto; padding: 8px; background: #dba968; border: 8px solid #bf8a50; border-radius: 8px; }
+.solo-point { min-width: 0; aspect-ratio: 1; border: 0; padding: 0; display: grid; place-items: center; background: linear-gradient(90deg,transparent calc(50% - .5px),#8b613e calc(50% - .5px),#8b613e calc(50% + .5px),transparent calc(50% + .5px)),linear-gradient(transparent calc(50% - .5px),#8b613e calc(50% - .5px),#8b613e calc(50% + .5px),transparent calc(50% + .5px)); }
+.solo-game .result-dialog { padding: 24px; }

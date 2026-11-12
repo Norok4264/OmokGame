@@ -116,3 +116,5 @@ A02/A03의 세션·대기열·신청·준비 서버 흐름은 독립 WebSocket �
 최신 6단계: docs/recovery-policy.md를 먼저 읽는다. 15/30/60초 복구 정책과 61개 테스트, DB 장애 후 시스템 무효 정책이 이전 단계 기록을 대체한다.
 
 최신 7단계는 docs/stage7-results-chat-png.md를 먼저 읽는다. 결과방 5분/재도전 30초·새 판 준비, 서버 채팅, 결과 PNG 구현과 80개 테스트가 추가됐다. 실제 IME·PNG 다운로드 파일 열기는 Computer Use URL 정책 차단으로 남아 있다. 이전 채팅·재도전 미구현 설명은 과거 상태다.
+
+최신 8단계: docs/stage8-solo-offline.md를 먼저 읽는다. Worker 혼자 놀기와 최종 빌드 PWA 오프라인을 Chrome/Edge로 실제 확인했고 93개 테스트가 통과했다. docs/evidence/stage8-*.json/png는 실제 결과다. 신뢰되는 HTTPS의 Android 실기는 미검증이며 11단계 필수 재확인 gate다. root npm run preview:web를 추가했으며 의존성/lockfile은 유지했다.
