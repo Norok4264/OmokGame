@@ -87,4 +87,20 @@ describe("B03/B05 heartbeat and socket ownership with injected disconnection", (
       spy.mockRestore(); expect(s.lobby.isReady()).toBe(true);
     } finally{s.close();}
   });
+  it("A07 result expiry cancels a last-millisecond rematch and returns both clients to the lobby",()=>{
+    const s=setup();try{
+      s.alice.command("challenge.create","invite",{targetPlayerId:s.bob.result("b").session.playerId});
+      s.bob.command("challenge.respond","accept",{challengeId:s.alice.result("invite").challengeId,accept:true});
+      const gameId=s.bob.result("accept").gameId;
+      s.alice.command("game.ready","r-a",{gameId,revision:0});s.bob.command("game.ready","r-b",{gameId,revision:0});vi.advanceTimersByTime(3250);
+      s.bob.command("game.resign","resign",{gameId,expectedRevision:1});
+      const keep=setInterval(()=>{s.alice.command("heartbeat","keep-a",{sentAtUtc:new Date().toISOString()});s.bob.command("heartbeat","keep-b",{sentAtUtc:new Date().toISOString()});},15000);
+      vi.advanceTimersByTime(299999);s.bob.command("game.retry.request","last-request",{gameId});
+      expect(s.bob.result("last-request").status).toBe("PENDING");
+      vi.advanceTimersByTime(1);s.alice.command("game.retry.respond","late-accept",{gameId,accept:true});clearInterval(keep);
+      expect(s.alice.result("late-accept")).toBeUndefined();
+      expect(s.db.prepare("SELECT status FROM rematches WHERE game_id=?").get(gameId)).toEqual({status:"CANCELLED"});
+      for(const socket of [s.alice,s.bob])expect(socket.messages.filter(m=>m.type==="lobby.snapshot").at(-1).snapshot.game).toBeNull();
+    }finally{s.close();}
+  });
 });

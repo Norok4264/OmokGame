@@ -1,11 +1,11 @@
-import type { RuleGameState } from "@danpan/shared";
+import type { RuleGameState, ResultRoomState, RoomChatMessage } from "@danpan/shared";
 import { parseServerJson, PROTOCOL_VERSION } from "@danpan/shared";
 
 export type LobbyState = {
   me: { playerId: string; nickname: string; state: string };
   players: Array<{ playerId: string; nickname: string; state: string }>;
   challenges: Array<{ challengeId: string; applicantPlayerId: string; acceptorPlayerId: string; status: string; responseDeadlineUtc: string }>;
-  game: Omit<RuleGameState, "status"> & { revision: number; turnDeadlineUtc?: string | null; endReason?: string | null; gameId: string; status: string; color: "WHITE" | "BLACK"; opponentName: string; deadlineUtc?: string; countdownStartedAtUtc?: string | null; ready?: { white: boolean; black: boolean } } | null;
+  game: Omit<RuleGameState, "status"> & { revision: number; turnDeadlineUtc?: string | null; endReason?: string | null; endedAtUtc?: string | null; whiteName: string; blackName: string; messages: RoomChatMessage[]; resultRoom: ResultRoomState | null; gameId: string; status: string; color: "WHITE" | "BLACK"; opponentName: string; deadlineUtc?: string; countdownStartedAtUtc?: string | null; ready?: { white: boolean; black: boolean } } | null;
   serverTimeUtc: string;
 };
 
@@ -56,10 +56,10 @@ export class LobbyClient {
     return this.openAndAuthenticate(nickname, saved);
   }
 
-  request(type: string, body: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+  request(type: string, body: Record<string, unknown> = {}, requestId: string = crypto.randomUUID()): Promise<Record<string, unknown>> {
     const socket = this.socket;
     if (!socket || socket.readyState !== WebSocket.OPEN) return Promise.reject(new Error("서버와 연결되어 있지 않습니다."));
-    const requestId = crypto.randomUUID();
+    if (this.commands.has(requestId)) return Promise.reject(new Error("같은 요청의 응답을 확인 중입니다. 잠시 기다리세요."));
     return new Promise((resolve, reject) => {
       const timer = window.setTimeout(() => {
         this.commands.delete(requestId);
@@ -122,7 +122,7 @@ export class LobbyClient {
       socket.addEventListener("open", () => window.clearTimeout(timer), { once: true });
     });
     if (Date.now() - startedAt >= timeoutMs) throw new Error("연결 확인 시간이 초과되었습니다.");
-    const requestId = crypto.randomUUID();
+    const requestId: string = crypto.randomUUID();
     socket.send(JSON.stringify(saved
       ? { protocolVersion: PROTOCOL_VERSION, type: "session.resume", requestId, token: saved.token }
       : { protocolVersion: PROTOCOL_VERSION, type: "session.start", requestId, nickname }));

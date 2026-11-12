@@ -110,6 +110,29 @@ export const migrations: readonly Migration[] = [
       CREATE INDEX preparation_deadline ON game_preparation(deadline_utc);
     `,
   },
+  {
+    version: 3,
+    name: "result_rooms_and_rematches",
+    sql: `
+      CREATE TABLE result_rooms (
+        game_id TEXT PRIMARY KEY REFERENCES games(game_id),
+        expires_at_utc TEXT NOT NULL,
+        white_left INTEGER NOT NULL DEFAULT 0,
+        black_left INTEGER NOT NULL DEFAULT 0,
+        closed INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE TABLE rematches (
+        game_id TEXT PRIMARY KEY REFERENCES games(game_id),
+        applicant_player_id TEXT NOT NULL REFERENCES players(player_id),
+        status TEXT NOT NULL,
+        deadline_utc TEXT NOT NULL,
+        new_game_id TEXT REFERENCES games(game_id)
+      );
+      INSERT INTO result_rooms(game_id,expires_at_utc)
+        SELECT game_id,strftime('%Y-%m-%dT%H:%M:%fZ',ended_at_utc,'+5 minutes') FROM games
+        WHERE status IN ('FINISHED','ABORTED') AND ended_at_utc IS NOT NULL;
+    `,
+  },
 ];
 
 export function runMigrations(db: SqliteDatabase): void {

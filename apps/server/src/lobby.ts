@@ -1,7 +1,8 @@
 import { OnlineGames } from "./online-game.js";
+import { Rooms } from "./rooms.js";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { IncomingMessage } from "node:http";
-import { createRuleGame, parseClientMessage, PROTOCOL_VERSION, validateNickname } from "@danpan/shared";
+import { createRuleGame, parseClientMessage, PROTOCOL_VERSION, validateNickname, roomErrorMessage } from "@danpan/shared";
 import type { ClientMessage } from "@danpan/shared";
 import { WebSocket, type WebSocketServer } from "ws";
 import type { SqliteDatabase } from "./storage/database.js";
@@ -59,6 +60,7 @@ function requestHash(message: ClientMessage): string {
 }
 
 export class LobbyCoordinator {
+  private readonly rooms: Rooms;
   private readonly online: OnlineGames;
   private storageReady = true;
   private closed = false;
@@ -72,6 +74,7 @@ export class LobbyCoordinator {
   private readonly countdownDeadlines = new Map<string, number>();
 
   constructor(private readonly db: SqliteDatabase, private readonly wss: WebSocketServer, private readonly timing: LobbyTiming = DEFAULT_LOBBY_TIMING) {
+    this.rooms = new Rooms(db, p => this.playerSockets.has(p), () => this.broadcastSnapshots(), timing.preparationLifetimeMs);
     this.online = new OnlineGames(db, () => this.broadcastSnapshots());
     const monotonicNow = performance.now();
     const utcNow = Date.now();
@@ -121,6 +124,25 @@ export class LobbyCoordinator {
       if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid message");
       const input = value as Record<string, unknown>;
       if (input.protocolVersion !== PROTOCOL_VERSION || typeof input.type !== "string" || typeof input.requestId !== "string") throw new Error("invalid envelope");
+      if (["game.result.leave", "game.retry.request", "game.retry.respond", "chat.send"].includes(String(input.type))) {
+        if (!state.playerId) { sendError(socket,input.requestId,"AUTH_REQUIRED","세션 인증이 필요합니다."); return; }
+        if (!input.requestId || input.requestId.length>128 || typeof input.gameId !== "string" || !input.gameId || input.gameId.length>128) throw new Error("invalid room envelope");
+        state.lastValid=performance.now();
+        try {
+          const result=this.rooms.command(state.playerId,input);
+          if (typeof result.newGameId === "string") {
+            const prep=this.db.prepare("SELECT deadline_utc FROM game_preparation WHERE game_id=?").get(result.newGameId) as {deadline_utc:string}|undefined;
+            if(prep && !this.preparationDeadlines.has(result.newGameId)) this.preparationDeadlines.set(result.newGameId,performance.now()+Math.max(0,Date.parse(prep.deadline_utc)-Date.now()));
+          }
+          sendResult(socket,input.requestId,result);
+        } catch(error) {
+          if(error && typeof error === "object" && "code" in error && String(error.code).startsWith("SQLITE")) this.online.markUnavailable();
+          const code=error instanceof Error && /^[A-Z_]+$/.test(error.message) ? error.message : "ROOM_OPERATION_FAILED";
+          sendError(socket,input.requestId,code,roomErrorMessage(code));
+          this.sendSnapshot(socket,state.playerId);
+        }
+        return;
+      }
       if (["game.move.propose", "game.resign", "game.snapshot.request"].includes(String(input.type))) {
         if (!input.requestId || input.requestId.length > 128 || typeof input.gameId !== "string" || !input.gameId || input.gameId.length > 128) throw new Error("invalid game envelope");
         if (!state.playerId) { sendError(socket, input.requestId as string, "AUTH_REQUIRED", "세션 인증이 필요합니다."); return; }
@@ -240,6 +262,7 @@ export class LobbyCoordinator {
     this.db.prepare("UPDATE player_sessions SET ended_at_utc=? WHERE player_id=? AND ended_at_utc IS NULL").run(nowIso, playerId);
     this.playerSockets.delete(playerId);
     state.playerId = null;
+    this.rooms.disconnect(playerId);
     sendResult(socket, requestId, { ended: true });
     this.releasePlayerName(playerId);
     this.broadcastSnapshots();
@@ -253,6 +276,7 @@ export class LobbyCoordinator {
     if (!playerId || this.playerSockets.get(playerId) !== socket) return;
     this.playerSockets.delete(playerId);
     this.online.disconnectedPlayer(playerId, this.timing.reconnectGraceMs);
+    this.rooms.disconnect(playerId);
     try { this.cancelPreparingGames(playerId); } catch { this.online.markUnavailable(); }
     const timer = setTimeout(() => {
       if (this.graceTimers.get(playerId) !== timer || this.playerSockets.has(playerId)) return;
@@ -493,8 +517,11 @@ export class LobbyCoordinator {
       p.nickname_display AS opponent_name,prep.deadline_utc,prep.countdown_started_at_utc
       FROM games g JOIN players p ON p.player_id=CASE WHEN g.white_player_id=? THEN g.black_player_id ELSE g.white_player_id END
       LEFT JOIN game_preparation prep ON prep.game_id=g.game_id
-      WHERE (g.white_player_id=? OR g.black_player_id=?) AND g.status IN ('PREPARING','ACTIVE','FINISHED','ABORTED') ORDER BY g.created_at_utc DESC LIMIT 1`)
-      .get(playerId, playerId, playerId) as { game_id: string; status: string; white_player_id: string; black_player_id: string; opponent_name: string; deadline_utc?: string; countdown_started_at_utc?: string | null } | undefined;
+      LEFT JOIN result_rooms rr ON rr.game_id=g.game_id
+      WHERE (g.white_player_id=? OR g.black_player_id=?) AND (g.status IN ('PREPARING','ACTIVE') OR
+        (g.status IN ('FINISHED','ABORTED') AND rr.closed=0 AND CASE WHEN g.white_player_id=? THEN rr.white_left ELSE rr.black_left END=0))
+      ORDER BY CASE WHEN g.status IN ('PREPARING','ACTIVE') THEN 0 ELSE 1 END,g.created_at_utc DESC LIMIT 1`)
+      .get(playerId, playerId, playerId, playerId) as { game_id: string; status: string; white_player_id: string; black_player_id: string; opponent_name: string; deadline_utc?: string; countdown_started_at_utc?: string | null } | undefined;
     const myPending = challenges.length > 0;
     const presenceOnline = this.playerSockets.has(playerId);
     const myState: PlayerSummary["state"] = gameRow && ["PREPARING", "ACTIVE"].includes(gameRow.status) ? "IN_GAME" : myPending ? "RESPONDING" : presenceOnline ? "WAITING" : "RECONNECTING";
@@ -510,7 +537,7 @@ export class LobbyCoordinator {
         }),
       ],
       challenges,
-      game: gameRow ? { ...this.online.snapshot(gameRow.game_id), gameId: gameRow.game_id, status: gameRow.status,
+      game: gameRow ? { ...this.online.snapshot(gameRow.game_id), ...this.rooms.metadata(gameRow.game_id,playerId), gameId: gameRow.game_id, status: gameRow.status,
         color: gameRow.white_player_id === playerId ? "WHITE" : "BLACK", opponentName: gameRow.opponent_name,
         ...(gameRow.deadline_utc ? { deadlineUtc: gameRow.deadline_utc } : {}),
         ...(gameRow.countdown_started_at_utc !== undefined ? { countdownStartedAtUtc: gameRow.countdown_started_at_utc } : {}),
@@ -577,6 +604,7 @@ export class LobbyCoordinator {
   private sweep(): void {
     if (!this.isReady()) return;
     this.online.sweep();
+    this.rooms.sweep();
     for (const [socket, state] of this.sockets) {
       if (!state.playerId || this.playerSockets.get(state.playerId) !== socket) continue;
       if (performance.now() - state.lastValid >= 30_000) { this.onClose(socket, state); socket.close(4003, "Heartbeat timeout"); }

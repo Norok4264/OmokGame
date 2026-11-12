@@ -383,3 +383,15 @@ kbd { padding: 2px 5px; border: 1px solid rgba(101,75,55,.22); border-radius: 5p
 .online-approved { animation: online-approved 180ms ease-out; }
 @keyframes online-approved { from { opacity: .25; transform: scale(.52); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .online-approved { animation: none; } }
+
+.online-chat { margin: 20px auto; width: min(100%, 650px); background: #fff5eb; border-radius: 14px; padding: 14px; text-align: left; }
+.online-chat h2 { font-size: 1.1rem; }
+.online-chat-messages { height: 190px; overflow-y: auto; overflow-anchor: none; padding: 8px; background: #fffaf6; border: 1px solid #d5ab8e; border-radius: 8px; }
+.online-chat-messages p { overflow-wrap: anywhere; margin: 6px 0; }
+.online-chat .chat-mine { color: #164caa; }
+.online-chat .chat-theirs { color: #a52b24; }
+.online-chat small { font-size: .75rem; }
+.online-chat-input { display: flex; gap: 8px; margin-top: 5px; }
+.online-chat-input input { min-width: 0; flex: 1; padding: 10px; min-height: 46px; border: 1px solid #88644c; border-radius: 8px; color: #352119; background: white; }
+.rematch-actions { margin: 16px 0; }
+.result-dialog { max-height: 90dvh; overflow-y: auto; }

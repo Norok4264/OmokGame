@@ -100,3 +100,11 @@ game.move.propose는 revision 대신 expectedRevision을 필수로 받는다. ga
 ## 6단계 복구 계약 (이전 복구 설명 대체)
 
 응용 heartbeat 15초, 마지막 유효 수신 후 30초 또는 close로 단절 확인, 확인 뒤 grace 60초. heartbeat.request(Server→Client)와 heartbeat(Client→Server)/heartbeat.ack을 사용한다. server.storage의 available=false는 저장소 장애 입력 중지, true는 복구 스냅샷 이후 입력 복구다. 토큰 인증→스냅샷 적용→입력 활성화. 턴과 복귀 마감 중 이른 것, 동률 TIMEOUT. 양측 단절은 확정 결과가 없을 때 ABORTED/DISCONNECT. DB 장애·서버 재시작의 ACTIVE는 ABORTED/SYSTEM_ABORT. 자세한 저장·재접속 간격·검증은 recovery-policy.md.
+
+## 7단계 결과방·재도전·채팅 계약
+
+Client→Server: game.result.leave(gameId), game.retry.request(gameId), game.retry.respond(gameId,accept), chat.send(gameId,messageId,body). 공통 protocolVersion/requestId 필수. 재도전/결과방은 game revision을 사용하지 않고 해당 방의 상태·역할·마감을 서버에서 검사한다. game.ready의 revision, game.move.propose의 expectedRevision은 기존대로다.
+승낙 성공 data.newGameId를 반환하며 승인 재확인은 원래 응답을 반환한다. 새 PREPARING 및 결과방 만료/퇴장은 lobby.snapshot.game 변경으로 전달한다.
+lobby.snapshot.game에 whiteName/blackName/endedAtUtc/messages[]/resultRoom이 추가됐다. resultRoom은 expiresAtUtc, canRequest/canRespond, disabledReason, retry(requesterPlayerId/status/deadlineUtc/newGameId)를 포함한다.
+chat.send ACK는 messageId/sequence를 반환한다. 동일 참가자+messageId+본문은 원래 sequence로 재확인하며 다른 본문은 MESSAGE_ID_CONFLICT. 최근 100개 본문을 messages[]로 두 참가자에게만 전달한다. chat.message 이벤트를 별도로 emit하지 않는다. sequence와 game revision은 독립적이다. 보관·rate·종료 후 읽기/5분 정책은 stage7-results-chat-png.md 참조.
+SQLite migration 3은 result_rooms와 rematches를 추가한다. chat 본문은 DB에 저장하지 않는다.

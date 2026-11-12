@@ -36,6 +36,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 export function App() {
   const dismissedGameRef = useRef<string | null>(null);
+  const resultLeaveInFlightRef=useRef(new Set<string>());
   const [dismissedGame, setDismissedGame] = useState<string | null>(null);
   const [screen, setScreen] = useState<Screen>("home");
   const [nickname, setNickname] = useState("");
@@ -102,6 +103,11 @@ export function App() {
       }
     };
     client.onSnapshot = (snapshot) => {
+      const finished=snapshot.game;
+      if(finished && finished.gameId===dismissedGameRef.current && !["ACTIVE","PREPARING"].includes(finished.status) && !resultLeaveInFlightRef.current.has(finished.gameId)) {
+        resultLeaveInFlightRef.current.add(finished.gameId);
+        void client.request("game.result.leave",{gameId:finished.gameId}).finally(()=>resultLeaveInFlightRef.current.delete(finished.gameId)).catch(()=>{});
+      }
       setLobbyState(snapshot);
       setEffectiveName(snapshot.me.nickname);
       if (snapshot.game && snapshot.game.gameId !== dismissedGameRef.current) setScreen("online");
@@ -629,7 +635,7 @@ export function App() {
         </section>
       )}
 
-      {screen === "online" && lobbyState?.game && lobbyState.game.status !== "PREPARING" && lobbyState.game.gameId !== dismissedGame && lobbyClientRef.current && <OnlineGame ownName={effectiveName} info={lobbyState.game} client={lobbyClientRef.current} connected={lobbyStatus === "connected"} leave={() => { dismissedGameRef.current = lobbyState.game!.gameId; setDismissedGame(lobbyState.game!.gameId); setScreen("queue"); }} />}
+      {screen === "online" && lobbyState?.game && lobbyState.game.status !== "PREPARING" && lobbyState.game.gameId !== dismissedGame && lobbyClientRef.current && <OnlineGame key={lobbyState.game.gameId} playerId={lobbyState.me.playerId} ownName={effectiveName} info={lobbyState.game} client={lobbyClientRef.current} connected={lobbyStatus === "connected"} leave={() => { dismissedGameRef.current = lobbyState.game!.gameId; setDismissedGame(lobbyState.game!.gameId); setScreen("queue"); }} />}
       {screen === "online" && lobbyState?.game?.status === "PREPARING" && (
         <section className="page-screen queue-screen preparation-screen" aria-labelledby="preparation-title">
           <AppHeader onHome={() => void cancelPreparation()} eyebrow="실제 WebSocket 대국 신청" />

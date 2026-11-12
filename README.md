@@ -1,6 +1,6 @@
 # 단판 오목
 
-PC Chrome·Edge와 Android Chrome을 대상으로 하는 반응형 PWA와 Node.js 게임 서버입니다. 프로젝트 기반, 공유 오목 규칙 모듈, 초기·대기열·온라인 대국 준비·결과·혼자 놀기 화면이 있습니다. 대기열, 세션, 접속자 선택, 신청/승낙/취소와 대국 준비는 실제 WebSocket·SQLite 상태에 연결되어 있습니다. 서버 권위 착수·60초 제한시간·승패·기권과 양측 결과 snapshot을 연결했습니다. 채팅과 재도전은 미완성입니다. 최신 검증 범위는 docs/online-authority.md를 참고하세요. 혼자 놀기는 로컬 봇과 진행하지만 PWA 오프라인 재실행 검증은 미완료입니다.
+PC Chrome·Edge와 Android Chrome을 대상으로 하는 반응형 PWA와 Node.js 게임 서버입니다. 프로젝트 기반, 공유 오목 규칙 모듈, 초기·대기열·온라인 대국 준비·결과·혼자 놀기 화면이 있습니다. 대기열, 세션, 접속자 선택, 신청/승낙/취소와 대국 준비는 실제 WebSocket·SQLite 상태에 연결되어 있습니다. 서버 권위 착수·60초 제한시간·승패·기권과 양측 결과 snapshot을 연결했습니다. 결과방·재도전·서버 채팅·결과 PNG를 연결했습니다. 실제 IME와 다운로드 PNG 파일 열기는 미검증입니다. 최신 검증 범위는 docs/stage7-results-chat-png.md를 참고하세요. 혼자 놀기는 로컬 봇과 진행하지만 PWA 오프라인 재실행 검증은 미완료입니다.
 
 ## 기술 구성
 
@@ -46,16 +46,18 @@ npm run check:server
 
 ## 환경 설정
 
-`.env.example`에는 로컬 기본값만 있습니다. 필요할 때 복사해 `.env`를 만들 수 있으며 실제 `.env`, 비밀값, DB 파일은 `.gitignore` 대상입니다. 현재 단계에서는 인증·실제 외부 Origin 허용 목록·실서버 설정이 구현되지 않았습니다.
+`.env.example`에는 로컬 기본값만 있습니다. 필요할 때 복사해 `.env`를 만들 수 있으며 실제 `.env`, 비밀값, DB 파일은 `.gitignore` 대상입니다. 세션 토큰 인증은 구현했습니다. 실제 외부 Origin 허용 목록·실서버 설정은 별도 확인이 필요합니다.
 
 ## 다음 단계
 
 1. 실제 PC와 브라우저 버전을 확인하고 환경 문서를 보완합니다.
-2. 후보/확정 화면을 서버 권위 판정과 revision에 연결하고 온라인 보드 양측 동기화를 구현합니다.
-3. 진행 중 복구·시간 제한·종료·채팅·재도전을 SQLite 저장 및 서버 이벤트로 구현합니다.
+2. 실제 IME·DOM 스크롤·PNG 다운로드 파일 열기와 모바일 브라우저를 검증합니다.
+3. 오프라인 PWA 재실행과 통신 보기의 실제 이벤트 기록을 완성합니다.
 4. PNG 저장, PWA 오프라인 재실행, 통신 보기를 완성하고 실제 기기 증거를 수집합니다.
 
 상세한 현재 상태는 `docs/handoff.md`, 요구사항 출처는 `docs/requirements.md`, 메시지 계약은 `docs/protocol.md`, 검증 상태는 `docs/acceptance.md`를 참고하세요.
 Codex 계정을 바꾸고 같은 PC 작업 폴더에서 이어갈 때는 `docs/account-switch-handoff.md`를 먼저 읽으세요.
 
 최신 복구: 15초 heartbeat, 30초 단절 확인, 60초 복귀 유예. 재인증 후 스냅샷으로 복구하며 기존 턴 마감을 유지합니다. 서버 재시작·DB 장애로 정상 진행하지 못한 ACTIVE는 시스템 무효 종료합니다. 검증 결과와 한계: [docs/recovery-policy.md](docs/recovery-policy.md).
+
+7단계 상세 구현·80개 테스트·브라우저 검증 제한: [docs/stage7-results-chat-png.md](docs/stage7-results-chat-png.md).

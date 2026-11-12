@@ -83,4 +83,13 @@ describe("browser recovery ordering and stale socket isolation",()=>{
     socket.message({type:"command.result",requestId:query.requestId,data:{accepted:true}});
     await rejected;expect(statuses).not.toContain("connected");client.stop();
   });
+  it("A08 a failed chat can be manually retried with identical requestId and messageId",async()=>{
+    const client=new LobbyClient();const start=client.start("Alice");const socket=FakeSocket.all[0]!;await(await authenticate(socket,start)).finish();
+    const body={gameId:"g",messageId:"stable-message",body:"한글 메시지"};
+    const first=client.request("chat.send",body,"stable-request");
+    const failed=expect(first).rejects.toThrow("전송 실패");
+    socket.message({type:"server.error",ok:false,requestId:"stable-request",code:"CHAT_RATE_LIMIT",message:"전송 실패",snapshot:null});await failed;
+    const second=client.request("chat.send",body,"stable-request");socket.message({type:"command.result",requestId:"stable-request",data:{messageId:"stable-message",sequence:1}});await second;
+    const sent=socket.sent.filter(m=>m.type==="chat.send");expect(sent).toHaveLength(2);expect(sent[0]).toEqual(sent[1]);client.stop();
+  });
 });

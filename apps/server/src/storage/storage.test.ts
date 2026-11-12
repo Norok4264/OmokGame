@@ -29,7 +29,7 @@ describe("SQLite migrations and atomic game repository", () => {
     const db = fixture();
     runMigrations(db);
     expect(isDatabaseReady(db)).toBe(true);
-    expect(db.prepare("SELECT COUNT(*) AS count FROM schema_migrations").get()).toMatchObject({ count: 2 });
+    expect(db.prepare("SELECT COUNT(*) AS count FROM schema_migrations").get()).toMatchObject({ count: 3 });
     db.close();
   });
 

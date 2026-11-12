@@ -83,6 +83,8 @@ export class OnlineGames {
       const update = this.db.prepare("UPDATE games SET state_json=?,status=?,end_reason=?,revision=revision+1,updated_at_utc=?,ended_at_utc=? WHERE game_id=? AND revision=?")
         .run(JSON.stringify(state), status, reason, now, status === "ACTIVE" ? null : now, row.game_id, row.revision);
       if (update.changes !== 1) throw new Error("STALE_REVISION");
+      if (["FINISHED", "ABORTED"].includes(status)) this.db.prepare("INSERT OR IGNORE INTO result_rooms(game_id,expires_at_utc) VALUES(?,?)")
+        .run(row.game_id, new Date(Date.parse(now) + 300_000).toISOString());
       if (move) this.db.prepare("INSERT INTO game_moves(game_id,revision,request_id,player_id,x,y,color,accepted_at_utc) VALUES(?,?,?,?,?,?,?,?)")
         .run(row.game_id, row.revision + 1, requestId, actor, move.x, move.y, move.color, now);
       this.db.prepare("INSERT INTO successful_requests VALUES(?,?,?,'GAME',?,?,?)").run(actor, requestId, hash, row.game_id, JSON.stringify(response), now);

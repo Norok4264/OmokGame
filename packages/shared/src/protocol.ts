@@ -28,7 +28,7 @@ export type ClientMessage =
   | (ClientEnvelope & { type: "challenge.respond"; challengeId: ChallengeId; accept: boolean })
   | (ClientEnvelope & { type: "challenge.cancel"; challengeId: ChallengeId })
   | (ClientEnvelope & { type: "game.resign" | "game.snapshot.request"; gameId: GameId; expectedRevision?: GameRevision })
-  | (ClientEnvelope & { type: "game.cancel"; gameId: GameId })
+  | (ClientEnvelope & { type: "game.cancel" | "game.result.leave"; gameId: GameId })
   | (ClientEnvelope & { type: "game.ready"; gameId: GameId; revision: GameRevision })
   | (ClientEnvelope & {
       type: "game.move.propose";
@@ -37,11 +37,10 @@ export type ClientMessage =
       x: number;
       y: number;
     })
-  | (ClientEnvelope & { type: "game.retry.request"; gameId: GameId; revision: GameRevision })
+  | (ClientEnvelope & { type: "game.retry.request"; gameId: GameId })
   | (ClientEnvelope & {
       type: "game.retry.respond";
       gameId: GameId;
-      revision: GameRevision;
       accept: boolean;
     })
   | (ClientEnvelope & {
@@ -199,11 +198,12 @@ export function parseClientMessage(input: unknown): ParseResult<ClientMessage> {
       if (!text(value.gameId, 128) || !integer(value.expectedRevision)) return bad("gameId/expectedRevision");
       break;
     case "game.snapshot.request":
+    case "game.result.leave":
+    case "game.retry.request":
     case "game.cancel":
       if (!text(value.gameId, 128)) return bad("gameId");
       break;
     case "game.ready":
-    case "game.retry.request":
       if (!text(value.gameId, 128) || !integer(value.revision)) return bad("gameId/revision");
       break;
     case "game.move.propose":
@@ -215,12 +215,12 @@ export function parseClientMessage(input: unknown): ParseResult<ClientMessage> {
       ) return bad("move coordinates or revision");
       break;
     case "game.retry.respond":
-      if (!text(value.gameId, 128) || !integer(value.revision) || typeof value.accept !== "boolean") {
+      if (!text(value.gameId, 128) || typeof value.accept !== "boolean") {
         return bad("retry response");
       }
       break;
     case "chat.send":
-      if (!text(value.gameId, 128) || !text(value.messageId, 128) || !text(value.body, 200)) {
+      if (!text(value.gameId, 128) || !text(value.messageId, 128) || typeof value.body !== "string" || [...value.body.trim()].length<1 || [...value.body.trim()].length>200) {
         return bad("chat payload");
       }
       break;

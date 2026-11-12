@@ -1,10 +1,16 @@
+import { Chat, useRoomChatState } from "./Chat.js";
+import { renderResultImage, downloadResultImage } from "./result-image.js";
 import { useEffect, useRef, useState } from "react";
-import { toScreenCoordinate, type RuleGameState } from "@danpan/shared";
+import { resultReason, toScreenCoordinate, type RuleGameState } from "@danpan/shared";
 import type { LobbyClient, LobbyState } from "./lobby-client.js";
-export function OnlineGame({ info, client, connected, leave, ownName }: { info: NonNullable<LobbyState["game"]>; client: LobbyClient; connected: boolean; leave: () => void; ownName: string }) {
+export function OnlineGame({ info, client, connected, leave, ownName, playerId }: { info: NonNullable<LobbyState["game"]>; client: LobbyClient; connected: boolean; leave: () => void; ownName: string; playerId: string }) {
+  const [preview,setPreview] = useState<string | null>(null);
+  const [saving,setSaving] = useState(false);
+  const [saveError,setSaveError] = useState("");
   const [candidate, setCandidate] = useState<{ x: number; y: number } | null>(null);
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState("");
+  const chatState=useRoomChatState(info.gameId);
   const [now, setNow] = useState(Date.now());
   const resultRef = useRef<HTMLDialogElement>(null);
   useEffect(() => { if (info.status !== "ACTIVE" && !resultRef.current?.open) resultRef.current?.showModal(); }, [info.status]);
@@ -17,6 +23,24 @@ export function OnlineGame({ info, client, connected, leave, ownName }: { info: 
     catch (error) { setNotice(error instanceof Error ? error.message : "저장 실패. 상태를 조회하세요."); }
     finally { clearTimeout(query); setPending(false); }
   }
+  async function roomCommand(type:string, body:Record<string,unknown>={}, exiting=false) {
+    if(exiting && !connected){leave();return;}
+    setPending(true); setNotice("");
+    try { await client.request(type,{gameId:info.gameId,...body}); if(exiting)leave(); }
+    catch(error){setNotice(error instanceof Error?error.message:"처리 실패. 다시 시도하세요.");}
+    finally{setPending(false);}
+  }
+  async function savePng(download:boolean) {
+    if(info.result?.kind!=="WIN")return;
+    setSaving(true);setSaveError("");
+    try {
+      const canvas=await renderResultImage({board:info.board,whiteName:info.whiteName,blackName:info.blackName,winner:info.result.winner,status:info.status,endReason:info.endReason??null,savedAt:new Date()});
+      setPreview(canvas.toDataURL("image/png"));
+      if(download) await downloadResultImage(canvas);
+    } catch(error){setSaveError(error instanceof Error?error.message:"PNG 저장 실패");}
+    finally{setSaving(false);}
+  }
+  const chat=<Chat state={chatState} key={info.gameId} gameId={info.gameId} messages={info.messages??[]} me={playerId} ownName={ownName} client={client} connected={connected} readOnly={info.status!=="ACTIVE"}/>;
   return <section className="page-screen game-screen" data-game-controls="true">
     <h1>온라인 대국</h1>
     <p>{ownName} ({info.color === "BLACK" ? "흑" : "백"}) · 상대 {info.opponentName} · revision {info.revision}</p>
@@ -37,17 +61,27 @@ export function OnlineGame({ info, client, connected, leave, ownName }: { info: 
     <button className="button button-primary" disabled={!ownTurn || !candidate} onClick={() => void command("game.move.propose")}>돌 놓기</button>
     <button className="button button-secondary" disabled={info.status !== "ACTIVE" || pending || !connected} onClick={() => { if (window.confirm("기권하시겠습니까? 상대의 승리로 종료됩니다.")) void command("game.resign"); }}>기권</button>
     <p role="status">{notice}</p>
-    {info.status !== "ACTIVE" && <dialog ref={resultRef} onCancel={e => e.preventDefault()} aria-label="대국 결과" className="queue-card result-dialog"><h2>{info.result?.kind === "WIN" ? `${info.result.winner === info.color ? "승리" : "패배"}` : info.status === "ABORTED" ? "무효 종료" : "무승부"}</h2><p>{info.endReason}</p>
-      {info.result?.kind === "WIN" && info.result.winner === info.color && <button className="button button-secondary" onClick={() => {
-        try {
-          const canvas = document.createElement("canvas"); canvas.width = canvas.height = 750;
-          const ctx = canvas.getContext("2d"); if (!ctx) throw new Error("Canvas unavailable");
-          ctx.fillStyle = "#dba968"; ctx.fillRect(0,0,750,750); ctx.strokeStyle = "#805b32";
-          for (let i=0;i<15;i++) { const p=25+i*50; ctx.beginPath(); ctx.moveTo(25,p); ctx.lineTo(725,p); ctx.moveTo(p,25); ctx.lineTo(p,725); ctx.stroke(); }
-          info.board.forEach((row,y) => row.forEach((stone,x) => { if (stone) { ctx.fillStyle=stone === "BLACK" ? "#111" : "#fff"; ctx.beginPath(); ctx.arc(25+x*50,25+y*50,21,0,Math.PI*2); ctx.fill(); } }));
-          const link=document.createElement("a"); link.download=`omok-${info.gameId}.png`; link.href=canvas.toDataURL("image/png"); link.click();
-        } catch { setNotice("PNG 저장 실패. 브라우저 다운로드 설정을 확인하고 다시 저장하세요."); }
-      }}>최종 보드 PNG 저장</button>}
-      <button className="button button-primary" style={{ float: "right" }} onClick={leave}>대기열로 나가기</button></dialog>}
+    {info.status === "ACTIVE" && chat}
+    {info.status !== "ACTIVE" && <dialog ref={resultRef} onCancel={e => e.preventDefault()} aria-label="대국 결과" className="queue-card result-dialog"><h2>{info.result?.kind === "WIN" ? `${info.result.winner === info.color ? "승리" : "패배"}` : info.status === "ABORTED" ? "무효 종료" : "무승부"}</h2>
+      <p>{resultReason(info.status,info.endReason)}</p>
+      <p>결과방 남은 시간: {Math.max(0,Math.ceil((Date.parse(info.resultRoom?.expiresAtUtc??"")-now)/1000))||0}초</p>
+      {info.result?.kind === "WIN" && info.result.winner === info.color && <div>
+        <button className="button button-primary" disabled={saving} onClick={()=>void savePng(true)}>{saving?"PNG 준비 중…":saveError?"PNG 저장 재시도":"최종 보드 PNG 다운로드"}</button>
+        <button className="button button-secondary" disabled={saving} onClick={()=>void savePng(false)}>미리보기</button>
+      </div>}
+      {saveError && <p role="alert">{saveError} · 결과는 유지됩니다. 재시도하거나 미리보기를 확인하세요.</p>}
+      {preview && <details open={Boolean(saveError)}><summary>PNG 미리보기</summary><img src={preview} alt="최종 보드·이름·돌 색·승리 팝업·종료 사유·저장 시각 미리보기" style={{maxWidth:"100%"}} /></details>}
+      <div className="rematch-actions">
+        {info.result?.kind === "WIN" && info.result.winner !== info.color && <button className="button button-primary" disabled={!connected||pending||!info.resultRoom?.canRequest} onClick={()=>void roomCommand("game.retry.request")}>재도전 요청 · 나는 백</button>}
+        {info.resultRoom?.canRespond && <><p>상대가 재도전을 신청했습니다. 승낙하면 나는 흑입니다.</p><button className="button button-primary" disabled={!connected||pending} onClick={()=>void roomCommand("game.retry.respond",{accept:true})}>재도전 승낙</button><button className="button button-secondary" disabled={!connected||pending} onClick={()=>void roomCommand("game.retry.respond",{accept:false})}>거부</button></>}
+        {info.resultRoom?.retry?.status==="PENDING" && <p role="status">재도전 응답 대기 · {Math.max(0,Math.ceil((Date.parse(info.resultRoom.retry.deadlineUtc)-now)/1000))}초</p>}
+        {info.resultRoom?.retry?.status==="DECLINED" && <p role="status">재도전 요청이 거절되었습니다.</p>}
+        {info.resultRoom?.retry?.status==="EXPIRED" && <p role="status">재도전 응답 시간이 만료되었습니다.</p>}
+        {info.resultRoom?.retry?.status==="CANCELLED" && <p role="status">재도전 요청이 취소되었습니다.</p>}
+        {info.resultRoom?.disabledReason && <p role="status">{info.resultRoom.disabledReason}</p>}
+      </div>
+      <p role="status">{notice}</p>
+      {chat}
+      <button className="button button-primary" style={{ float: "right" }} disabled={pending} onClick={()=>void roomCommand("game.result.leave",{},true)}>대기열로 나가기</button></dialog>}
   </section>;
 }

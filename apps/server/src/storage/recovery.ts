@@ -14,8 +14,10 @@ export function reconcileUnfinished(db: SqliteDatabase): void {
         .run(status, reason, JSON.stringify(state), now, now, row.game_id, row.revision);
       db.prepare("INSERT INTO successful_requests VALUES(?,?,?,'GAME',?,?,?)")
         .run(row.black_player_id, `system:recovery:${randomUUID()}`, "recovery", row.game_id, JSON.stringify({ gameId: row.game_id, status, endReason: reason, approvedRevision: row.revision + 1 }), now);
+      if (status === "ABORTED") db.prepare("INSERT OR IGNORE INTO result_rooms(game_id,expires_at_utc) VALUES(?,?)").run(row.game_id, new Date(Date.parse(now) + 300_000).toISOString());
     }
     db.prepare("DELETE FROM game_preparation").run();
+    db.prepare("UPDATE rematches SET status='CANCELLED' WHERE status='PENDING'").run();
     db.prepare("UPDATE challenges SET status='CANCELLED',revision=revision+1,updated_at_utc=? WHERE status='PENDING'").run(now);
   }).immediate();
 }
