@@ -1,0 +1,94 @@
+{
+  "atUtc": "2026-11-12T07:35:17.663Z",
+  "head": "31d2096727f18b52eae1c487877065b757e0732d",
+  "origin": "https://github.com/Norok4264/OmokGame.git",
+  "trackedCount": 141,
+  "deliveryFileCount": 180,
+  "ignoredTracked": [],
+  "unsafeTracked": [],
+  "ignoreProbes": [
+    {
+      "path": ".env",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "deploy/.env.production",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "deploy/.env.production.example",
+      "expected": false,
+      "ignored": false
+    },
+    {
+      "path": ".env.example",
+      "expected": false,
+      "ignored": false
+    },
+    {
+      "path": "private-reports/report.docx",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "submission-private/report.pdf",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "private-captures/test.pcapng",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "somewhere/raw.pcap",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "operational-logs/server.txt",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "data/omok.sqlite",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "releases/source.tar.gz",
+      "expected": true,
+      "ignored": true
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.jar",
+      "expected": false,
+      "ignored": false
+    }
+  ],
+  "lockfileChanged": false,
+  "runtime": {
+    "checkedAt": "2026-11-12",
+    "node": "24.22.3",
+    "npm": "12.2.2",
+    "nodeImage": "node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54",
+    "caddyImage": "caddy:2.11.7-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5",
+    "checkoutAction": "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+    "sources": [
+      "https://nodejs.org/dist/index.json",
+      "https://hub.docker.com/v2/repositories/library/node/tags/24.22.3-bookworm-slim",
+      "https://hub.docker.com/v2/repositories/library/caddy/tags/2.11.7-alpine",
+      "https://github.com/actions/checkout/tree/v6"
+    ],
+    "containerExecutedHere": false
+  },
+  "sourceCodeSha256": "34d3af0f680be1795e17621616883df9f0cf5cb22fc98f1c241e3d2369afc7ff",
+  "dockerCliAvailable": false,
+  "dockerDaemonVerified": false,
+  "githubCiRunObserved": false,
+  "publicDeploymentObserved": false,
+  "personalAcademicReportIncluded": false,
+  "completed": true
+}

@@ -1,0 +1,33 @@
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
+{$APP_DOMAIN} {
+	header X-Content-Type-Options nosniff
+	header Referrer-Policy no-referrer
+	@websocket path /ws
+	handle @websocket {
+		reverse_proxy server:3001 {
+			stream_close_delay 5m
+		}
+	}
+	handle_path /api/* {
+		header Cache-Control no-store
+		reverse_proxy server:3001
+	}
+	@health path /healthz /readyz
+	handle @health {
+		header Cache-Control no-store
+		reverse_proxy server:3001
+	}
+	handle {
+		root * /srv
+		@mutable path / /index.html /sw.js /offline-manifest.json /manifest.webmanifest
+		header @mutable Cache-Control no-cache
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+}

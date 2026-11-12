@@ -1,0 +1,27 @@
+name: reproducible-checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    steps:
+      - name: Native dependency build tools
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates python3 make g++
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6, verified 2026-11-12
+      - name: Pinned package manager
+        run: npm install --global npm@12.2.2 --no-audit --no-fund
+      - name: Verify runtime versions
+        run: |
+          test "$(node --version)" = "v24.22.3"
+          test "$(npm --version)" = "12.2.2"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

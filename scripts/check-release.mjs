@@ -1,0 +1,13 @@
+import {readFile,writeFile} from "node:fs/promises";
+import {spawnSync} from "node:child_process";
+import assert from "node:assert/strict";
+import {collectSource,fileManifest} from "./source-files.mjs";
+const source=await collectSource(),manifest=await fileManifest(process.cwd(),source.files),lock=JSON.parse(await readFile("deploy/runtime-lock.json","utf8")),docker=await readFile("deploy/Dockerfile","utf8"),ci=await readFile(".github/workflows/ci.yml","utf8");
+assert.equal((await readFile(".node-version","utf8")).trim(),lock.node);assert.equal((await readFile(".nvmrc","utf8")).trim(),"v"+lock.node);assert(docker.includes(lock.nodeImage)&&docker.includes(lock.caddyImage));assert(ci.includes(lock.nodeImage)&&ci.includes(lock.checkoutAction));assert(ci.includes("npm@"+lock.npm));
+const required=[".env.example","deploy/.env.production.example",".github/workflows/ci.yml","package-lock.json","README.md","apps/web/public/fonts/OFL.txt","packages/shared/src/rules.test.ts"];
+for(const path of required)assert(source.files.includes(path),"Missing source delivery file: "+path);
+const expected={".env":true,"deploy/.env.production":true,"deploy/.env.production.example":false,".env.example":false,"private-reports/report.docx":true,"submission-private/report.pdf":true,"private-captures/test.pcapng":true,"somewhere/raw.pcap":true,"operational-logs/server.txt":true,"data/omok.sqlite":true,"releases/source.tar.gz":true,"android/gradle/wrapper/gradle-wrapper.jar":false};
+const probes=Object.entries(expected).map(([path,expected])=>({path,expected,ignored:spawnSync("git",["check-ignore","-q","--no-index","--",path]).status===0}));assert(probes.every(p=>p.ignored===p.expected));
+const dockerCheck=spawnSync("docker",["version"],{encoding:"utf8"});
+const report={atUtc:new Date().toISOString(),head:source.head,origin:source.origin,trackedCount:source.trackedCount,deliveryFileCount:source.files.length,ignoredTracked:source.ignoredTracked,unsafeTracked:source.unsafeTracked,ignoreProbes:probes,lockfileChanged:spawnSync("git",["diff","--name-only","HEAD","--","package-lock.json"],{encoding:"utf8"}).stdout.trim()!=="",runtime:lock,sourceCodeSha256:manifest.codeSha256,dockerCliAvailable:!dockerCheck.error,dockerDaemonVerified:dockerCheck.status===0,githubCiRunObserved:false,publicDeploymentObserved:false,personalAcademicReportIncluded:false,completed:true};
+assert.equal(report.lockfileChanged,false);await writeFile("docs/evidence/stage11-release-audit.json",JSON.stringify(report,null,2));console.log(JSON.stringify({completed:true,tracked:source.trackedCount,delivery:source.files.length,ignoredTracked:0,lockfileChanged:false,dockerAvailable:report.dockerCliAvailable,ciExecuted:false}));

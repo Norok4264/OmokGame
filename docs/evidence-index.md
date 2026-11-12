@@ -1,7 +1,7 @@
 # 증거 색인
 
 기록 시점: 2026-11-12 (Asia/Seoul)  
-앱 버전: 0.1.0 / 0.1.0-8f52d08ed448ebe3 — 10단계. 최신 실제 검증은 E11. E9/E10은 당시 빌드의 역사 증거. 전체 대응표는 integration-validation.md.
+앱 버전: 0.1.0 / Windows 웹 0.1.0-8f52d08ed448ebe3 — 11단계. 최신 실제 검증은 E12, 재현 런타임 Node24.22.3/npm12.2.2. E9~E11은 당시 조건의 역사 증거. 최신 전달/한계는 release-handoff.md.
 
 이전 단계의 미수집/미구현 문장은 당시 상태이며 최신 표를 우선한다. 과거 로컬 WSS 표기는 TLS 검증 증거가 아니다. 이번 시험은 HTTP/WS이다.
 
@@ -134,3 +134,25 @@
 ## 10단계 개념 설명과 미수집 자료
 
 C10의 구조/착수 흐름도·OSI 역할은 [소스 기반 설명](report-network-collection.md)으로 유지·갱신했다. E11의 실제 앱 관측을 패킷으로 명명하지 않는다. pcap/pcapng/TLS 키 로그는 여전히 없으며 P10 수집 절차와 G11-08로 연결한다. 실제 PC-PC/PC-Android/Android-Android, Android 신뢰 HTTPS 오프라인/PNG, 전체 성능 조건은 G11-01~09의 계획이다. 학번·성명은 미제공 상태다.
+
+## 11단계 실제 재현/전달 증거 E12
+
+**공개 배포/실제 Android/실제 GitHub Actions run은 아직 없다.** 아래 관측과 C10 소스 기반 설명, 미실행 G11 게이트를 구분한다.
+
+| ID | 실제 자료 | 결과/범위 |
+|---|---|---|
+| E12-01 | [깨끗한 설치/명령 원문](evidence/stage11-clean-install.json), [초기 Node24.22.1 비교 기록](evidence/stage11-clean-install-node24221.json) | 최종 Node24.22.3/npm12.2.2 복사본 npm ci→typecheck→test→build 성공, 23 files/117 tests. 원본 node_modules/DB 유지. codeSha256은 최종 소스 전달본과 대조 |
+| E12-02 | [최종 명령/종료 코드](evidence/stage11-checks.json), [117개 시험](evidence/stage11-tests.json) | 타입·서버/웹 빌드 성공. WS1012 drain/비협조 연결 종료·종료 중 readiness 시험 포함. Linux OS signal 인수는 아님 |
+| E12-03 | [실제 런타임 준비](evidence/stage11-runtime.json), [고정 OCI/액션 값](../deploy/runtime-lock.json), [Caddy 구문 검사](evidence/stage11-caddy-validation.json) | 공식 checksum 확인, 전역 Node 변경 없음, manifest/tag/SHA 실제 조회. Caddy2.11.7 validate 성공. image build/run·공인 cert 발급은 미실행 |
+| E12-04 | [실제 Caddy proxy/WS](evidence/stage11-deployment-smoke.json) | Windows 로컬 HTTP용 치환본, 웹/API/SW/manifest/health/readiness200·Origin 유지, WS 약16초/heartbeat3건. Docker/공인 HTTPS/WSS 아님 |
+| E12-05 | [새 실제 Chrome/Edge 시연](evidence/stage11-browser.json), [Chrome 결과](evidence/stage11-chrome-result.png), [Edge 결과](evidence/stage11-edge-result.png), [온라인 360px](evidence/stage11-online-mobile-emulation.png), [홈 360px](evidence/stage11-mobile-emulation.png) | Node24.22.3의 실제 두 브라우저, 신청·9수 승리·채팅2·복구·PNG·재도전·창 대체·키보드/기본색 대비. 360px는 PC 에뮬레이션. 별도 PC/Android 아님 |
+| E12-06 | [실제 패킷 안전 요약](evidence/stage11-packet-summary.json), scripts/check-packet-capture.mjs | Wireshark4.6.8/Npcap Loopback 332프레임/4stream/HTTP101 4건. 브라우저 착수9/채팅2 대조. frame105 JSON180/TCP payload188/frame232 bytes. NULL/Loopback, 평문 WS. 토큰/본문은 요약에 저장 안 함. 원본 private-captures/*.pcapng는 Git/Docker/전달본 제외 |
+| E12-07 | [실기·도구 재확인](evidence/stage11-device-packet-check.json) | 실제 adb 목록0, Android Chrome null, 신뢰 HTTPS 없음. 표준 Wireshark 경로 발견 후 실제 capture 완료를 별도 시각으로 갱신. Android HTTPS/설치/offline/PNG/망 전환은 미실행 |
+| E12-08 | [GitHub main 실제 조회](evidence/stage11-remote.json), [공개 소스 audit](evidence/stage11-release-audit.json) | 기존 원격/로컬 기준 HEAD 일치. 새 변경 push 없음. 추적 제외 대상0·실제 env/개인 보고서/원시 pcap 제외·예제 포함·lock 유지·CI pin 일치 |
+| E12-09 | [Node24.22.3 파일 WAL 재시작](evidence/stage11-restart.json) | 실제 별도 process kill/restart, FINAL 유지/ACTIVE 무효/PREPARING 취소·ready 후 기존 토큰 조회. 기존 stage10 파일은 원문 복원해 보존 |
+| E12-10 | 로컬 releases/SHA256SUMS.txt, source-manifest.json, source-validation.json 및 전달본 안 SOURCE_MANIFEST.json | 최신 소스/에셋/lock/테스트/CI/deploy/docs 전달. 포장 후 압축 해제와 파일별 hash·clean-install code hash 대조. releases는 Git 제외이며 사용자 로컬 전달용. 개인 학번/성명 보고서·비밀·raw pcap 미포함 |
+| E12-11 | [실제 PC PNG](evidence/stage11-downloaded-result.png), [파일 열기](evidence/stage11-png-open.png), [변환 실패 주입](evidence/stage11-png-failure.png) | 실제 다운로드/디코드·브라우저 파일 열기·실패 후 결과 유지/재시도. Android 파일 열기 아님 |
+
+## 11단계 미해결 실제 인수
+
+[release-handoff.md](release-handoff.md)의 표와 G11-01~09를 유지한다. 별도 PC/Android 조합, Android Chrome 실제 버전·신뢰 HTTPS/WSS·PWA 설치/offline/PNG/재접속, 물리 NIC/WSS packet, Linux container/볼륨/OS signal, 실제 CI run은 미실행이다. 이제 **로컬 평문 WS packet은 실제 확보했으므로** 이를 과거 “캡처 없음” 기록과 구별한다. C10 구조도/OSI 표는 설명 자료이며 실제 radio/MAC/TLS 수치로 사용하지 않는다. 개인 최종 보고서는 코드 공개와 별도로 제출한다.

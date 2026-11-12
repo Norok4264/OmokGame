@@ -127,3 +127,9 @@ ALLOWED_ORIGINS는 정확 일치 목록이며 누락/null/다른 Origin은 HTTP 
 Migration 4는 rematches.resolved_at_utc/종료 정리 인덱스, 5는 player_sessions.result_access_revoked를 추가한다. 경기 복귀 종료와 결과 보관 조회를 분리한다. 복귀가 끝난 토큰이라도 취소되지 않은 해시+참가자+종료24h 이내 결과가 있으면 조회 전용 인증을 허용한다. snapshot의 readOnlyResult=true, RESULT_QUERY_ONLY presence, 비어 있는 목록/채팅·재도전 없음으로 전달한다. 기존 대국 입력/새 신청은 RESULT_QUERY_ONLY 오류. game.result.leave 또는 홈 초기화는 권한을 취소하며 초기 화면에서 새 이용한다. 활성 판의 토큰은 유휴 만료로 취소하지 않는다.
 
 종료 결과와 연관 replay/조회 링크는 종료24h 기준으로 시작 시 및 최대60초 주기 원자 정리한다. 조회 접근은 경계에서 즉시 차단한다. ACTIVE/PREPARING은 삭제하지 않는다. 채팅은 양쪽 결과방 퇴장 또는 종료5분 중 이른 때 정리한다. 앱에 영속 운영 로그 파일을 새로 만들지 않았으며 외부 로그 보관은 11단계 운영 확인 대상이다. 세부 실제 결과는 integration-validation.md 참조.
+
+## 11단계 배포/종료 경계
+
+외부 한 HTTPS 출처의 /ws는 Caddy가 내부 Node3001의 /ws로 Upgrade하고, /api/*는 접두사를 제거해 HTTP health/readiness로 전달한다. 운영 Origin은 실제 APP_DOMAIN의 https 출처 한 개이며 빈 도메인은 Compose에서 거절한다. 이 구성은 실제 공인 도메인에 배포되지 않았다.
+
+종료 시작 시 Lobby의 새 메시지를 무시하고 readiness=false를 반환한다. WS1012로 재시작을 알리고 정상 drain 또는 10초 경계 강제 종료 뒤 DB를 닫는다. 다음 시작의 PREPARING 취소/ACTIVE 시스템 무효/최종 결과 보존은 유지한다. 프로토콜 버전1과 게임/채팅 필드·원자 commit 순서는 변경하지 않았다.

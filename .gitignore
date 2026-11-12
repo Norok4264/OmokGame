@@ -76,3 +76,14 @@ key.properties
 
 # Optional raw packet captures and TLS key logs may contain session secrets.
 private-captures/
+
+# Personal academic submissions are separate from the public application source.
+private-reports/
+submission-private/
+personal-report/
+reports/private/
+operational-logs/
+releases/
+*.pcap
+*.pcapng
+*.har

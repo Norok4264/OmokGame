@@ -1,7 +1,7 @@
 # 개발 인수인계
 
 기록 시점: 2026-11-12 (Asia/Seoul)  
-현재 단계: 10단계 통합 검증·누락 수정 완료(소프트웨어 범위); 실제 두 기기/HTTPS는 11단계 필수
+현재 단계: 11단계 배포 구성·CI·소스 전달 준비; 실제 서버/Android HTTPS 인수는 미해결
 앱 버전: `0.1.0` (구현 검증 중; 실기 전체 인수 미완료)
 
 ## 완료 범위
@@ -110,3 +110,13 @@ Codex 브라우저 localhost의 이전 360×800·1280×900 렌더 확인은 E3 �
 최종 Chrome 157.0.8103.51 / Edge 157.0.4341.46 실제 격리 브라우저 대국·PNG 파일 열기·오프라인 재실행·업데이트, 별도 Node 프로세스/파일 WAL DB 재시작을 확인했다. 같은 호스트이므로 PC-PC 실기로 세지 않는다. adb 실제 목록은 비어 있고 Android Chrome 버전/실제 두 PC/신뢰 HTTPS·WSS/패킷은 없다. G11-01~09를 다음 단계에서 실제 수집한다. 사용 한도 때문에 미완료로 남긴 구현은 없으며 없는 장비를 시험한 것으로 바꾸지 않는다.
 
 실제 기록은 E11, 개념은 C10, 미수집 안내는 P10/G11로 구분. 기존 8/9단계 파일은 역사 증거로 보존. 다음 계정은 `node scripts/verify-integrated.mjs`로 현재 타입/테스트/빌드를 재현하고, 필요하면 시험 전용 preview/3001 환경에서 브라우저 스크립트를 실행한다. 실행 조건·번들 경로는 통합 문서 참조. 실제 런타임 data/omok.sqlite를 시험으로 초기화하지 않는다.
+
+## 11단계 최신 인수인계 — 우선 적용
+
+[release-handoff.md](release-handoff.md)와 개정 README가 최신 실행 기준이다. 앱0.1.0 / Windows 웹0.1.0-8f52d08ed448ebe3, Node24.22.3/npm12.2.2의 독립 npm ci→타입→117개 시험→빌드 성공. 전역 Node24.22.1/기존 의존성/lockfile 유지. OCI digest·checkout SHA를 고정한 최소 CI, 단일 Node + Caddy 동일 HTTPS 출처/영속 SQLite 볼륨 Compose 구성을 추가했다. Docker/공개 서버/CI run은 실제 실행하지 않았다.
+
+이번에는 Npcap loopback 실제 332프레임·4 TCP stream/HTTP101 4건과 브라우저 착수9/채팅2를 대조했다. 원본 pcap은 private-captures에만 있고 공개 전달본에서 제외. E12는 실제 관측, C10은 개념, 실제 WSS·물리 NIC/Android는 미검증이다. Caddy 구문/로컬 HTTP proxy·WS 16초 유지 확인 및 bounded shutdown을 추가했다.
+
+실제 remote main=로컬 기준 HEAD31d2096727f18b52eae1c487877065b757e0732d를 확인했으나 새 변경 push/배포는 하지 않았다. 최신 미커밋 소스 전달본은 releases/danpan-omok-source-0.1.0.tar.gz + SHA256SUMS + SOURCE_MANIFEST. `check-release.mjs`→`package-source.mjs`, 압축 해제 `verify-source.mjs`로 재현한다. 개인 학번/성명 보고서는 공개 코드와 별도이다.
+
+실제 adb 연결0·신뢰 도메인/서버 없음. Android HTTPS/WSS·설치/오프라인/PNG/재접속, 실제 두 기기 조합과 Linux volume/signal/CI는 11단계 게이트가 미해결이다. 환경 확보 후 같은 게이트를 다시 시험한다. 과거 stage10/evidence는 보존했으며 최신 실제 자료는 E12 색인 참조.

@@ -1,0 +1,10 @@
+{
+  "atUtc": "2026-11-12T07:07:33.4026485Z",
+  "version": "2.11.7",
+  "archiveSha512": "c308154504e53755958ffc62d8a2657ab17eefd6dd25c45dbb2c3d93d29519971f77ca652f7d0f2bcb7f980b9ba3822478865e29969d0272d7613550a43152b1",
+  "officialChecksumMatched": true,
+  "configuration": "deploy/Caddyfile",
+  "validationExitCode": 0,
+  "domain": "validation.invalid (reserved syntax-test value only)",
+  "publicHttpsDeployed": false
+}

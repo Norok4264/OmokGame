@@ -1,0 +1,21 @@
+{
+  "appVersion": "0.1.0",
+  "webBuild": "0.1.0-8f52d08ed448ebe3",
+  "startedAt": "2026-11-12T07:19:28.965Z",
+  "scope": "Windows Caddy 2.11.7 local HTTP proxy test; not Docker or trusted HTTPS/WSS deployment",
+  "completed": true,
+  "routes": {
+    "web": 200,
+    "apiHealth": 200,
+    "directReadiness": 200,
+    "serviceWorker": 200,
+    "offlineManifest": 200
+  },
+  "webSocket": {
+    "authenticated": true,
+    "heartbeatAcks": 3,
+    "observedOpenMs": 16014.3755,
+    "originPreserved": true
+  },
+  "finishedAt": "2026-11-12T07:19:45.296Z"
+}

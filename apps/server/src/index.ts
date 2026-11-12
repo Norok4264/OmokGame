@@ -2,6 +2,7 @@ import { loadEnvFile } from "node:process";
 import { createApplicationServer } from "./http.js";
 import { openDatabase } from "./storage/database.js";
 import { DEVELOPMENT_ORIGINS } from "./limits.js";
+import { stopApplication } from "./shutdown.js";
 
 try {
   loadEnvFile(".env");
@@ -25,13 +26,10 @@ httpServer.listen(port, host, () => {
   process.stdout.write(`danpan-omok server listening on http://${host}:${port}\n`);
 });
 
+let stopping=false;
 function shutdown(): void {
-  lobby.close();
-  webSocketServer.close();
-  httpServer.close(() => {
-    db.close();
-    process.exit(0);
-  });
+  if(stopping)return;stopping=true;
+  void stopApplication({httpServer,webSocketServer,lobby},db).then(()=>process.exit(0),()=>process.exit(1));
 }
 
 process.on("SIGINT", shutdown);

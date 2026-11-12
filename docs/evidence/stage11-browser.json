@@ -1,0 +1,244 @@
+{
+  "appVersion": "0.1.0",
+  "startedAt": "2026-11-12T07:21:38.280Z",
+  "node": "v24.22.3",
+  "kind": "isolated desktop Chrome/Edge on ONE host, not PC-PC or Android",
+  "completed": true,
+  "chrome": "157.0.8103.51",
+  "edge": "157.0.4341.46",
+  "browserSends": [
+    {
+      "browser": "A",
+      "type": "chat.send",
+      "requestIdShort": "d5f353bb",
+      "gameIdShort": "ff14f78c",
+      "chatLength": 42
+    },
+    {
+      "browser": "A",
+      "type": "chat.send",
+      "requestIdShort": "00430048",
+      "gameIdShort": "ff14f78c",
+      "chatLength": 6
+    },
+    {
+      "browser": "A",
+      "type": "game.move.propose",
+      "requestIdShort": "ef6400d4",
+      "gameIdShort": "ff14f78c",
+      "x": 0,
+      "y": 0,
+      "expectedRevision": 1
+    },
+    {
+      "browser": "B",
+      "type": "game.move.propose",
+      "requestIdShort": "a44a308a",
+      "gameIdShort": "ff14f78c",
+      "x": 0,
+      "y": 2,
+      "expectedRevision": 2
+    },
+    {
+      "browser": "A",
+      "type": "game.move.propose",
+      "requestIdShort": "cf646201",
+      "gameIdShort": "ff14f78c",
+      "x": 1,
+      "y": 0,
+      "expectedRevision": 3
+    },
+    {
+      "browser": "B",
+      "type": "game.move.propose",
+      "requestIdShort": "52982922",
+      "gameIdShort": "ff14f78c",
+      "x": 1,
+      "y": 2,
+      "expectedRevision": 4
+    },
+    {
+      "browser": "A",
+      "type": "game.move.propose",
+      "requestIdShort": "6d13a4d5",
+      "gameIdShort": "ff14f78c",
+      "x": 2,
+      "y": 0,
+      "expectedRevision": 5
+    },
+    {
+      "browser": "B",
+      "type": "game.move.propose",
+      "requestIdShort": "f761b8ef",
+      "gameIdShort": "ff14f78c",
+      "x": 2,
+      "y": 2,
+      "expectedRevision": 6
+    },
+    {
+      "browser": "A",
+      "type": "game.move.propose",
+      "requestIdShort": "a0d4cf3e",
+      "gameIdShort": "ff14f78c",
+      "x": 3,
+      "y": 0,
+      "expectedRevision": 7
+    },
+    {
+      "browser": "B",
+      "type": "game.move.propose",
+      "requestIdShort": "ff57d9e9",
+      "gameIdShort": "ff14f78c",
+      "x": 3,
+      "y": 2,
+      "expectedRevision": 8
+    },
+    {
+      "browser": "A",
+      "type": "game.move.propose",
+      "requestIdShort": "70186b6c",
+      "gameIdShort": "ff14f78c",
+      "x": 4,
+      "y": 0,
+      "expectedRevision": 9
+    }
+  ],
+  "build": "0.1.0-8f52d08ed448ebe3",
+  "previewNotCommitted": true,
+  "arrowAndEscape": true,
+  "safeTextAndSyntheticComposition": true,
+  "chatColors": {
+    "mine": "rgb(29, 78, 216)",
+    "theirs": "rgb(185, 28, 28)"
+  },
+  "generalButtons": {
+    "count": 4,
+    "minWidth": 65.453125,
+    "minHeight": 48
+  },
+  "solidColorContrast": {
+    "mine": 6.226950689845794,
+    "theirs": 6.011779093532914,
+    "bodyBase": 13.253301308989693,
+    "scope": "solid base color pairs only; not every gradient or masked edge pixel, not WCAG certification"
+  },
+  "pastMessageScrollAndHide": true,
+  "mobileOnlineEmulation": {
+    "overflow": false,
+    "chatBelowBoard": true,
+    "inputBelowMessages": true,
+    "isAndroid": false,
+    "keyboard": "physical Android keyboard not tested"
+  },
+  "keyboardEnterMove": true,
+  "refreshPreservedDeadline": true,
+  "popupClosedAndReopened": true,
+  "injectedPngFailureRetainedResult": true,
+  "actualPngDownloadedAndOpened": {
+    "file": "stage11-downloaded-result.png",
+    "width": 1100,
+    "height": 1500
+  },
+  "timingA": {
+    "ack": [
+      14,
+      12.300000000745058,
+      13,
+      12.800000000745058,
+      18.900000002235174
+    ],
+    "receiptToDom": [
+      {
+        "revision": 2,
+        "elapsedMs": 2.199999999254942
+      },
+      {
+        "revision": 3,
+        "elapsedMs": 1.699999999254942
+      },
+      {
+        "revision": 4,
+        "elapsedMs": 1.7000000029802322
+      },
+      {
+        "revision": 5,
+        "elapsedMs": 2.099999997764826
+      },
+      {
+        "revision": 6,
+        "elapsedMs": 2.899999998509884
+      },
+      {
+        "revision": 7,
+        "elapsedMs": 1.7000000029802322
+      },
+      {
+        "revision": 8,
+        "elapsedMs": 1.9000000022351742
+      },
+      {
+        "revision": 9,
+        "elapsedMs": 1.699999999254942
+      },
+      {
+        "revision": 10,
+        "elapsedMs": 8.299999997019768
+      }
+    ]
+  },
+  "timingB": {
+    "ack": [
+      14.5,
+      15.800000000745058,
+      13.899999998509884,
+      14.100000001490116
+    ],
+    "receiptToDom": [
+      {
+        "revision": 2,
+        "elapsedMs": 15.099999997764826
+      },
+      {
+        "revision": 3,
+        "elapsedMs": 1.800000000745058
+      },
+      {
+        "revision": 4,
+        "elapsedMs": 1.5
+      },
+      {
+        "revision": 5,
+        "elapsedMs": 2.099999997764826
+      },
+      {
+        "revision": 6,
+        "elapsedMs": 1.699999999254942
+      },
+      {
+        "revision": 7,
+        "elapsedMs": 1.699999999254942
+      },
+      {
+        "revision": 8,
+        "elapsedMs": 1.800000000745058
+      },
+      {
+        "revision": 9,
+        "elapsedMs": 1.7000000029802322
+      },
+      {
+        "revision": 10,
+        "elapsedMs": 12.5
+      }
+    ]
+  },
+  "timingScope": "ACK: each sender's performance.now send→command.result. Receipt→DOM: same recipient clock from snapshot event to matching stone DOM mutation; not paint completion, not A-clock minus B-clock. B arrays restart on reload. Small local functional samples, not external target certification.",
+  "winRematchAndFinalImmutable": true,
+  "replacedTabStopped": true,
+  "mobileEmulation": {
+    "width": 360,
+    "overflow": false,
+    "isAndroid": false
+  },
+  "finishedAt": "2026-11-12T07:21:47.310Z"
+}

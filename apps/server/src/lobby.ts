@@ -123,6 +123,7 @@ export class LobbyCoordinator {
   }
 
   private onMessage(socket: WebSocket, state: SocketState, raw: string): void {
+    if(this.closed)return;
     if (state.playerId && this.playerSockets.get(state.playerId) !== socket) return;
     const history=state.playerId ? this.requestWindows.get(state.playerId)??[] : this.unauthWindows.get(socket)??[];
     if(state.playerId)this.requestWindows.set(state.playerId,history);else this.unauthWindows.set(socket,history);
@@ -648,6 +649,7 @@ export class LobbyCoordinator {
   }
 
   isReady(): boolean {
+    if(this.closed)return false;
     const ready = this.online.ensureStorageReady();
     if (ready !== this.storageReady) {
       this.storageReady = ready;

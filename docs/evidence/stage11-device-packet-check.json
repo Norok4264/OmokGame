@@ -1,0 +1,18 @@
+{
+  "atUtc": "2026-11-12T07:16:41.1017157Z",
+  "adbDevices": "List of devices attached",
+  "androidChromeVersion": null,
+  "trustedHttpsEndpointProvided": false,
+  "dockerCliInPath": false,
+  "captureFilesInPrivateCaptures": 1,
+  "captureToolsInPath": [],
+  "captureToolsAtStandardPaths": [
+    "C:\\Program Files\\Wireshark\\dumpcap.exe",
+    "C:\\Program Files\\Wireshark\\tshark.exe"
+  ],
+  "actualAndroidTestsRun": false,
+  "actualPacketCaptureRun": true,
+  "packetCaptureCompletedAtUtc": "2026-11-12T07:21:57.726Z",
+  "packetEvidence": "stage11-packet-summary.json",
+  "note": "adb inventory was observed at atUtc; later packet capture status is recorded separately."
+}

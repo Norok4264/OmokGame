@@ -78,3 +78,9 @@ PWA 경로에는 Android Studio·Gradle·JDK·SDK·adb가 빌드 필수 항목�
 2026-11-12 Codex 셸의 Windows 10.0.22631/PowerShell7.6.9, Node24.22.1/Git2.54.0 유지. 최종 headless 실제 실행 Chrome157.0.8103.51/Edge157.0.4341.46. 초기 Edge42→최종46 변경은 관찰값이며 앱 의존성을 업데이트한 것이 아니다. 실제 adb1.0.41/platform-tools37.0.1-15733141의 devices -l은 빈 목록이었다. Android Chrome 버전은 미확인. [장비/도구 JSON](evidence/stage10-repository-environment.json), [브라우저 파일/adb 원문](evidence/stage10-device-check.json), [통합 결과](integration-validation.md).
 
 npm PATH 미확인 상태에서 `node scripts/verify-integrated.mjs`로 고정 설치본의 타입/테스트/빌드를 수행했다. 22개 파일115개 테스트 통과. 별도 PC/Android/신뢰 HTTPS는 확보되지 않았으며 G11 게이트로 남긴다. PWA이므로 Android Studio·JDK·Gradle은 빌드 필수 아님이며 변경하지 않았다.
+
+## 11단계 고정 재현/배포 환경
+
+공식 Node 배포 목록에서 확인한 보안 패치24.22.3을 .cache/tools 안에만 준비해 SHA256 검증 후 사용했다. 전역 Node24.22.1 변경 없음. npm12.2.2도 공식 registry integrity로 확인한 별도 도구이며 프로젝트 lockfile 유지. 새 소스 복사본 npm ci/타입/117개 시험/빌드 성공. 릴리스 pin은 .node-version/.nvmrc와 deploy/runtime-lock.json. CI의 Linux Node/Caddy OCI manifest digest와 공식 checkout SHA는 실제 조회했으나 컨테이너/CI는 미실행.
+
+Caddy2.11.7 공식 Windows zip의 SHA512를 확인하고 구문/로컬 HTTP proxy/Origin·WS 16초 유지 시험 성공. Wireshark4.6.8 dumpcap/tshark를 표준 경로에서 발견했고 Npcap Loopback 인터페이스의 실제 캡처에 성공했다. NULL/Loopback이며 물리 Ethernet/Wi-Fi가 아니다. adb 재조회도 연결 목록0, Android Chrome 버전·공인 HTTPS/WSS는 미확인. [11단계 기록](release-handoff.md)과 E12 JSON 참조.

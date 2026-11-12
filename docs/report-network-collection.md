@@ -213,3 +213,9 @@ WSS는 WebSocket을 TLS로 보호한다. 일반적인 외부 구간 캡처에서
 본 문서의 테스트 수치와 안전한 앱 관측은 9단계 실행 기록을 따르고, 실제 패킷 자료는 추후 확보했을 때만 docs/evidence-index.md에 별도 등록한다.
 
 10단계 추가: E11은 최종 빌드 0.1.0-8f52d08ed448ebe3의 실제 앱 관측이다. Origin/상한/보관 및 검증 범위는 integration-validation.md 참조. 본 문서의 E10 링크는 9단계 당시 기록이며 새 패킷 수집을 뜻하지 않는다.
+
+## 11단계 실제 수집 추가 (기존 미수집 기록과 구분)
+
+이 문서 앞부분의 “실제 캡처 없음”은 9단계 당시 상태다. 11단계에 표준 경로의 Wireshark4.6.8/Npcap Loopback을 확인하고 자체 시험용 tcp port3001만 25초 실제 수집했다. [안전한 packet 요약](evidence/stage11-packet-summary.json), [동일 시연 브라우저](evidence/stage11-browser.json), [수집 범위/한계](release-handoff.md)를 최신 관측으로 참조한다.
+
+332프레임·4 TCP stream·HTTP101 4건, 브라우저 착수9/채팅2와 대조. frame105의 A1 요청은 JSON180/TCP payload188/captured frame232 bytes다. capinfos는 NULL/Loopback을 보고했으며 MAC/실제 무선 매체 관측은 없다. Vite↔Node 평문 WS였고 TLS/WSS는 수집하지 않았다. 시간 비교로 다른 기기의 지연을 만들지 않았다. raw 인증/본문 가능성이 있는 pcap은 private-captures에만 보관하고 소스/보고서 공개 자료에서는 제외한다. OSI 표/구조도는 여전히 소스 기반 개념 설명이다.
