@@ -96,7 +96,7 @@ export function App() {
         setProbeState("ready");
         setProbeMessage("WebSocket 세션 인증 완료. 대기열과 신청은 서버 상태입니다.");
       } else if (status === "reconnecting") {
-        setProbeMessage("연결이 끊겼습니다. 12초 복귀 유예 안에 세션을 복구합니다.");
+        setProbeMessage("연결이 끊겼습니다. 60초 복귀 유예 안에 세션을 복구합니다.");
       } else if (status === "failed") {
         setProbeState("unavailable");
       }

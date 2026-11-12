@@ -66,3 +66,5 @@ git status --short --branch
 ## Android 도구
 
 PWA 경로에는 Android Studio·Gradle·JDK·SDK·adb가 빌드 필수 항목이 아니다. APK 경로가 선택되지 않았으므로 설치 버전, Daemon JVM, Wrapper/AGP 호환성 및 Android 기기는 현재 조사 대상이 아니다. 나중에 APK를 요청하면 별도 진단을 먼저 한다.
+
+6단계(2026-11-12): 기존 Codex Windows/PowerShell·의존성·lockfile 유지. 타입 검사/61개 테스트/서버·Vite 빌드 성공, 메모리 SQLite 기반 실제 localhost health/readiness 200 확인. 사용자 PC 버전·실제 모바일/망 전환은 추가 검증하지 않음. docs/recovery-policy.md 참조.

@@ -96,3 +96,7 @@ challenge/session 및 게임 준비는 구현했다. 실제 게임 착수·종�
 ## 5단계 변경
 
 game.move.propose는 revision 대신 expectedRevision을 필수로 받는다. game.resign은 gameId/expectedRevision, game.snapshot.request는 gameId를 받는다. 공통 protocolVersion/requestId는 필수다. 성공 응답 data는 gameId/approvedRevision 및 최신 snapshot을 포함하고 재확인에는 replayed=true를 제공한다. 오래된 새 요청은 오류 뒤 최신 lobby.snapshot으로 복구한다. 새 착수 규칙 검사보다 성공 요청의 hash 조회가 먼저다. 자세한 트랜잭션/시간/종료 계약은 online-authority.md를 따른다.
+
+## 6단계 복구 계약 (이전 복구 설명 대체)
+
+응용 heartbeat 15초, 마지막 유효 수신 후 30초 또는 close로 단절 확인, 확인 뒤 grace 60초. heartbeat.request(Server→Client)와 heartbeat(Client→Server)/heartbeat.ack을 사용한다. server.storage의 available=false는 저장소 장애 입력 중지, true는 복구 스냅샷 이후 입력 복구다. 토큰 인증→스냅샷 적용→입력 활성화. 턴과 복귀 마감 중 이른 것, 동률 TIMEOUT. 양측 단절은 확정 결과가 없을 때 ABORTED/DISCONNECT. DB 장애·서버 재시작의 ACTIVE는 ABORTED/SYSTEM_ABORT. 자세한 저장·재접속 간격·검증은 recovery-policy.md.

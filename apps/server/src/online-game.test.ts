@@ -52,8 +52,8 @@ describe("authoritative persisted online rules", () => {
       expect(games.snapshot("g").status).toBe("ACTIVE");
       expect(publications()).toBe(beforePublications);
       db.exec("DROP TRIGGER fail_request");
-      send("black", "lost", 4, 0, 9);
-      expect(games.snapshot("g")).toMatchObject({ revision: 10, status: "FINISHED", result: { winner: "BLACK" } });
+      expect(() => send("black", "lost", 4, 0, 9)).toThrow("GAME_NOT_ACTIVE");
+      expect(games.snapshot("g")).toMatchObject({ revision: 10, status: "ABORTED", endReason: "SYSTEM_ABORT", result: null });
     } finally { db.close(); }
   });
   it("persists resignation once and replays it after the end", () => {
@@ -68,7 +68,7 @@ describe("authoritative persisted online rules", () => {
     const { db, games, send } = setup(20);
     try {
       await new Promise(resolve => setTimeout(resolve, 40));
-      expect(() => send("black", "late", 0, 0)).toThrow("TURN_EXPIRED");
+      expect(() => send("black", "late", 0, 0)).toThrow("GAME_NOT_ACTIVE");
       games.sweep(); games.sweep();
       expect(games.snapshot("g")).toMatchObject({ revision: 2, endReason: "TIMEOUT", result: { winner: "WHITE" } });
     } finally { db.close(); }

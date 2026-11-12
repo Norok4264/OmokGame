@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import BetterSqlite3 from "better-sqlite3";
-import { runMigrations } from "./migrations.js";
+import { migrations, runMigrations } from "./migrations.js";
 
 export type SqliteDatabase = InstanceType<typeof BetterSqlite3>;
 
@@ -19,7 +19,7 @@ export function openDatabase(filename: string): SqliteDatabase {
 
 export function isDatabaseReady(db: SqliteDatabase): boolean {
   try {
-    const row = db.prepare("SELECT 1 AS ready FROM schema_migrations WHERE version = ?").get(1) as
+    const row = db.prepare("SELECT 1 AS ready FROM schema_migrations WHERE version = ?").get(migrations.at(-1)!.version) as
       | { ready: number }
       | undefined;
     return row?.ready === 1;

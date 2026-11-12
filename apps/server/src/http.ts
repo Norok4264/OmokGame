@@ -3,6 +3,8 @@ import { WebSocketServer } from "ws";
 import type { SqliteDatabase } from "./storage/database.js";
 import { isDatabaseReady } from "./storage/database.js";
 import { LobbyCoordinator, type LobbyTiming } from "./lobby.js";
+import { reconcileUnfinished } from "./storage/recovery.js";
+import { runMigrations } from "./storage/migrations.js";
 
 export interface ApplicationServer {
   httpServer: Server;
@@ -19,7 +21,7 @@ function respondJson(response: ServerResponse, status: number, body: unknown): v
   response.end(JSON.stringify(body));
 }
 
-function handleHttpRequest(request: IncomingMessage, response: ServerResponse, db: SqliteDatabase): void {
+function handleHttpRequest(request: IncomingMessage, response: ServerResponse, db: SqliteDatabase, available: () => boolean): void {
   const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
   if (request.method === "GET" && pathname === "/healthz") {
     respondJson(response, 200, { status: "ok", service: "danpan-omok-server" });
@@ -27,7 +29,7 @@ function handleHttpRequest(request: IncomingMessage, response: ServerResponse, d
   }
 
   if (request.method === "GET" && pathname === "/readyz") {
-    const ready = isDatabaseReady(db);
+    const ready = available() && isDatabaseReady(db);
     respondJson(response, ready ? 200 : 503, {
       status: ready ? "ready" : "not-ready",
       checks: { sqlite: ready },
@@ -39,12 +41,14 @@ function handleHttpRequest(request: IncomingMessage, response: ServerResponse, d
 }
 
 export function createApplicationServer(db: SqliteDatabase, timing?: LobbyTiming): ApplicationServer {
-  const httpServer = createServer((request, response) => handleHttpRequest(request, response, db));
+  runMigrations(db);
+  reconcileUnfinished(db); // before listen/upgrade/readiness are exposed
+  const httpServer = createServer((request, response) => handleHttpRequest(request, response, db, () => lobby.isReady()));
   const webSocketServer = new WebSocketServer({ noServer: true, maxPayload: 8 * 1024, perMessageDeflate: false });
 
   httpServer.on("upgrade", (request, socket, head) => {
     const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
-    if (pathname !== "/ws") {
+    if (pathname !== "/ws" || !lobby.isReady()) {
       socket.destroy();
       return;
     }

@@ -18,7 +18,7 @@ export interface LobbyTiming {
 
 export const DEFAULT_LOBBY_TIMING: LobbyTiming = {
   authTimeoutMs: 5_000,
-  reconnectGraceMs: 12_000,
+  reconnectGraceMs: 60_000,
   sessionLifetimeMs: 24 * 60 * 60 * 1_000,
   challengeLifetimeMs: 30_000,
   sameTargetCooldownMs: 10_000,
@@ -28,7 +28,7 @@ export const DEFAULT_LOBBY_TIMING: LobbyTiming = {
 
 type PlayerId = string;
 type Session = { playerId: PlayerId; tokenHash: string };
-type SocketState = { playerId: PlayerId | null; authTimer: NodeJS.Timeout; helloSeen: boolean };
+type SocketState = { playerId: PlayerId | null; authTimer: NodeJS.Timeout; helloSeen: boolean; lastValid: number; lastHeartbeat: number };
 type PlayerSummary = { playerId: string; nickname: string; state: "WAITING" | "RESPONDING" | "IN_GAME" | "RECONNECTING" };
 type LobbySnapshot = {
   me: { playerId: string; nickname: string; state: PlayerSummary["state"] };
@@ -60,6 +60,7 @@ function requestHash(message: ClientMessage): string {
 
 export class LobbyCoordinator {
   private readonly online: OnlineGames;
+  private storageReady = true;
   private closed = false;
   private readonly sockets = new Map<WebSocket, SocketState>();
   private readonly playerSockets = new Map<PlayerId, WebSocket>();
@@ -82,7 +83,7 @@ export class LobbyCoordinator {
       this.preparationDeadlines.set(item.game_id, monotonicNow + Math.max(0, Date.parse(item.deadline_utc) - utcNow));
       if (item.countdown_started_at_utc) this.countdownDeadlines.set(item.game_id, monotonicNow + Math.max(0, this.timing.startCountdownMs - (utcNow - Date.parse(item.countdown_started_at_utc))));
     }
-    this.sweepTimer = setInterval(() => this.sweep(), 250);
+    this.sweepTimer = setInterval(() => { try { this.sweep(); } catch { this.online.markUnavailable(); } }, 250);
     this.sweepTimer.unref();
     wss.on("connection", (socket, request) => this.attach(socket, request));
   }
@@ -99,17 +100,21 @@ export class LobbyCoordinator {
 
   private attach(socket: WebSocket, _request: IncomingMessage): void {
     send(socket, { type: "server.hello", serverBuild: "0.2.0", serverTimeUtc: new Date().toISOString() });
-    const state: SocketState = { playerId: null, helloSeen: false, authTimer: setTimeout(() => {
+    const state: SocketState = { playerId: null, helloSeen: false, lastValid: performance.now(), lastHeartbeat: performance.now(), authTimer: setTimeout(() => {
       if (state.playerId === null) socket.close(4001, "Authentication timeout");
     }, this.timing.authTimeoutMs) };
     state.authTimer.unref();
     this.sockets.set(socket, state);
-    socket.on("message", (raw) => this.onMessage(socket, state, raw.toString()));
-    socket.on("close", () => this.onClose(socket, state));
+    socket.on("message", (raw) => { try { this.onMessage(socket, state, raw.toString()); } catch { this.online.markUnavailable(); sendError(socket, null, "STORAGE_UNAVAILABLE", "저장소 장애로 대국 처리를 중지했습니다."); } });
+    socket.on("close", () => { try { this.onClose(socket, state); } catch { this.online.markUnavailable(); } });
     socket.on("error", () => socket.close());
   }
 
   private onMessage(socket: WebSocket, state: SocketState, raw: string): void {
+    if (state.playerId && this.playerSockets.get(state.playerId) !== socket) return;
+    if (!this.isReady()) { sendError(socket, null, "STORAGE_UNAVAILABLE", "저장소 복구를 기다립니다."); return; }
+    this.sweep();
+    if (state.playerId && this.playerSockets.get(state.playerId) !== socket) return;
     let message: ClientMessage;
     try {
       const value: unknown = JSON.parse(raw);
@@ -119,8 +124,9 @@ export class LobbyCoordinator {
       if (["game.move.propose", "game.resign", "game.snapshot.request"].includes(String(input.type))) {
         if (!input.requestId || input.requestId.length > 128 || typeof input.gameId !== "string" || !input.gameId || input.gameId.length > 128) throw new Error("invalid game envelope");
         if (!state.playerId) { sendError(socket, input.requestId as string, "AUTH_REQUIRED", "세션 인증이 필요합니다."); return; }
+        state.lastValid = performance.now();
         try { sendResult(socket, input.requestId as string, this.online.command(state.playerId, input)); }
-        catch (error) { send(socket, { type: "server.error", requestId: input.requestId, ok: false, code: error instanceof Error ? error.message : "STORAGE_FAILED", message: "요청을 승인하지 못했습니다. 최신 상태를 확인하세요.", snapshot: null }); this.sendSnapshot(socket, state.playerId); }
+        catch (error) { if (error && typeof error === "object" && "code" in error && String(error.code).startsWith("SQLITE")) this.online.markUnavailable(); send(socket, { type: "server.error", requestId: input.requestId, ok: false, code: error instanceof Error ? error.message : "STORAGE_FAILED", message: "요청을 승인하지 못했습니다. 최신 상태를 확인하세요.", snapshot: null }); this.sendSnapshot(socket, state.playerId); }
         return;
       }
       if (input.type === "client.hello") {
@@ -141,6 +147,7 @@ export class LobbyCoordinator {
       return;
     }
 
+    state.lastValid = performance.now();
     if (message.type === "session.start") { this.startSession(socket, state, message.requestId, message.nickname); return; }
     if (message.type === "session.resume") { this.resumeSession(socket, state, message.requestId, message.token); return; }
     if (message.type === "heartbeat") {
@@ -201,6 +208,7 @@ export class LobbyCoordinator {
   }
 
   private resumeSession(socket: WebSocket, state: SocketState, requestId: string, token: string): void {
+    if (state.playerId) { sendError(socket, requestId, "SESSION_ALREADY_AUTHENTICATED", "이미 인증된 연결입니다."); return; }
     const row = this.db.prepare(`SELECT ps.player_id, p.nickname_display FROM player_sessions ps
       JOIN players p ON p.player_id=ps.player_id
       WHERE ps.token_hash=? AND ps.ended_at_utc IS NULL AND ps.expires_at_utc>?`).get(hashToken(token), new Date().toISOString()) as
@@ -213,11 +221,12 @@ export class LobbyCoordinator {
   }
 
   private authenticate(socket: WebSocket, state: SocketState, playerId: string): void {
+    this.online.reconnectedPlayer(playerId);
     clearTimeout(state.authTimer);
     state.playerId = playerId;
     const previous = this.playerSockets.get(playerId);
-    if (previous && previous !== socket) previous.close(4002, "Session resumed on a new connection");
     this.playerSockets.set(playerId, socket);
+    if (previous && previous !== socket) previous.close(4002, "Session resumed on a new connection");
     const grace = this.graceTimers.get(playerId);
     if (grace) clearTimeout(grace);
     this.graceTimers.delete(playerId);
@@ -243,14 +252,21 @@ export class LobbyCoordinator {
     const playerId = state.playerId;
     if (!playerId || this.playerSockets.get(playerId) !== socket) return;
     this.playerSockets.delete(playerId);
-    this.cancelPreparingGames(playerId);
+    this.online.disconnectedPlayer(playerId, this.timing.reconnectGraceMs);
+    try { this.cancelPreparingGames(playerId); } catch { this.online.markUnavailable(); }
     const timer = setTimeout(() => {
+      if (this.graceTimers.get(playerId) !== timer || this.playerSockets.has(playerId)) return;
       this.graceTimers.delete(playerId);
+      if (!this.isReady()) return;
+      try {
+      this.online.sweep();
       const endedAt = new Date().toISOString();
       this.terminatePendingState(playerId, endedAt);
       this.db.prepare("UPDATE player_sessions SET ended_at_utc=? WHERE player_id=? AND ended_at_utc IS NULL").run(endedAt, playerId);
       this.releasePlayerName(playerId);
+      this.online.forgetPlayer(playerId);
       this.broadcastSnapshots();
+      } catch { this.online.markUnavailable(); }
     }, this.timing.reconnectGraceMs);
     timer.unref();
     this.graceTimers.set(playerId, timer);
@@ -550,7 +566,22 @@ export class LobbyCoordinator {
       .run(`released:${playerId}`, playerId, playerId, playerId, playerId, playerId, playerId, nowIso);
   }
 
+  isReady(): boolean {
+    const ready = this.online.ensureStorageReady();
+    if (ready !== this.storageReady) {
+      this.storageReady = ready;
+      for (const socket of this.playerSockets.values()) send(socket, { type: "server.storage", available: ready });
+    }
+    return ready;
+  }
   private sweep(): void {
+    if (!this.isReady()) return;
+    this.online.sweep();
+    for (const [socket, state] of this.sockets) {
+      if (!state.playerId || this.playerSockets.get(state.playerId) !== socket) continue;
+      if (performance.now() - state.lastValid >= 30_000) { this.onClose(socket, state); socket.close(4003, "Heartbeat timeout"); }
+      else if (performance.now() - state.lastHeartbeat >= 15_000) { state.lastHeartbeat = performance.now(); send(socket, { type: "heartbeat.request" }); }
+    }
     this.online.sweep();
     const now = new Date();
     const nowIso = now.toISOString();
@@ -572,7 +603,7 @@ export class LobbyCoordinator {
         this.preparationDeadlines.delete(item.game_id);
         this.countdownDeadlines.delete(item.game_id);
       } else if (item.countdown_started_at_utc && (this.countdownDeadlines.get(item.game_id) ?? 0) <= monoNow) {
-        try { this.online.start(item.game_id); } catch { continue; }
+        try { if (!this.online.start(item.game_id)) continue; } catch { continue; }
         startedCount += 1;
         this.db.prepare("DELETE FROM game_preparation WHERE game_id=?").run(item.game_id);
         this.preparationDeadlines.delete(item.game_id);

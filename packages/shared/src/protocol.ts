@@ -96,6 +96,8 @@ export interface ChatMessageEvent {
 }
 
 export type ServerMessage =
+  | { protocolVersion: typeof PROTOCOL_VERSION; type: "heartbeat.request" }
+  | { protocolVersion: typeof PROTOCOL_VERSION; type: "server.storage"; available: boolean }
   | ServerHello
   | CommandSuccess
   | CommandFailure
@@ -274,6 +276,11 @@ export function parseServerMessage(input: unknown): ParseResult<ServerMessage> {
       break;
     case "challenge.event":
       if (!text(input.challengeId, 128) || !integer(input.revision, 1) || !isRecord(input.event)) return failed("INVALID_FIELD", "Invalid challenge event");
+      break;
+    case "heartbeat.request":
+      break;
+    case "server.storage":
+      if (typeof input.available !== "boolean") return failed("INVALID_FIELD", "Invalid storage availability");
       break;
     case "heartbeat.ack":
       if (!text(input.requestId, 128) || !utcInstant(input.serverTimeUtc)) return failed("INVALID_FIELD", "Invalid heartbeat acknowledgement");

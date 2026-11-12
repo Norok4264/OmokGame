@@ -1,5 +1,5 @@
 import type { RuleGameState } from "@danpan/shared";
-import { PROTOCOL_VERSION } from "@danpan/shared";
+import { parseServerJson, PROTOCOL_VERSION } from "@danpan/shared";
 
 export type LobbyState = {
   me: { playerId: string; nickname: string; state: string };
@@ -28,6 +28,11 @@ export function clearSavedSession(): void { sessionStorage.removeItem(STORAGE_KE
 
 export class LobbyClient {
   private socket: WebSocket | null = null;
+  private generation = 0;
+  private reconnectEpoch = 0;
+  private snapshotVersion = 0;
+  private lastReceived = performance.now();
+  private lastSent = 0;
   private stopped = false;
   private reconnecting = false;
   private heartbeat: number | null = null;
@@ -43,6 +48,9 @@ export class LobbyClient {
   }
 
   async start(nickname: string, saved: SavedSession | null = null): Promise<SavedSession> {
+    this.reconnectEpoch++;
+    this.reconnecting = false;
+    const previous = this.socket; this.socket = null; previous?.close();
     this.stopped = false;
     this.onStatus("connecting");
     return this.openAndAuthenticate(nickname, saved);
@@ -63,7 +71,9 @@ export class LobbyClient {
   }
 
   stop(): void {
+    this.reconnectEpoch++;
     this.stopped = true;
+    this.generation++;
     this.reconnecting = false;
     if (this.heartbeat !== null) window.clearInterval(this.heartbeat);
     this.heartbeat = null;
@@ -78,7 +88,8 @@ export class LobbyClient {
     this.onStatus("ended");
   }
 
-  private async openAndAuthenticate(nickname: string, saved: SavedSession | null): Promise<SavedSession> {
+  private async openAndAuthenticate(nickname: string, saved: SavedSession | null, timeoutMs = 8_000): Promise<SavedSession> {
+    const generation = ++this.generation;
     const startedAt = Date.now();
     const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(`${scheme}//${window.location.host}/ws`);
@@ -90,11 +101,13 @@ export class LobbyClient {
         settled = true;
         error ? reject(error) : resolve();
       };
-      const timer = window.setTimeout(() => finish(new Error("8초 안에 서버에 연결하지 못했습니다. 네트워크를 확인하고 재시도하거나 혼자 놀기를 선택하세요.")), 8_000);
+      const timer = window.setTimeout(() => finish(new Error("서버에 연결하지 못했습니다. 재시도하거나 혼자 놀기를 선택하세요.")), timeoutMs);
       socket.addEventListener("open", () => {
         socket.addEventListener("message", (event) => {
+          if (this.socket !== socket || this.generation !== generation || this.stopped) return;
           const message = this.parse(event.data);
-          if (!message) return;
+          if (!message || message.protocolVersion !== PROTOCOL_VERSION) return;
+          this.lastReceived = performance.now();
           if (message.type === "server.hello") finish();
           this.handleMessage(message);
         });
@@ -108,15 +121,16 @@ export class LobbyClient {
       socket.addEventListener("error", () => finish(new Error("서버 연결에 실패했습니다. 네트워크를 확인하고 재시도하세요.")), { once: true });
       socket.addEventListener("open", () => window.clearTimeout(timer), { once: true });
     });
-    if (Date.now() - startedAt >= 8_000) throw new Error("최초 인증에 8초가 넘게 걸렸습니다. 다시 시도해 주세요.");
+    if (Date.now() - startedAt >= timeoutMs) throw new Error("연결 확인 시간이 초과되었습니다.");
     const requestId = crypto.randomUUID();
     socket.send(JSON.stringify(saved
       ? { protocolVersion: PROTOCOL_VERSION, type: "session.resume", requestId, token: saved.token }
       : { protocolVersion: PROTOCOL_VERSION, type: "session.start", requestId, nickname }));
     const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
       const timer = window.setTimeout(() => {
+        this.listeners.delete(onMessage);
         reject(new Error("세션 인증이 8초 안에 끝나지 않았습니다. 다시 시도하세요."));
-      }, Math.max(1, 8_000 - (Date.now() - startedAt)));
+      }, Math.max(1, timeoutMs - (Date.now() - startedAt)));
       const onMessage = (message: Record<string, unknown>) => {
         if (message.requestId !== requestId || (message.type !== "command.result" && message.type !== "server.error")) return;
         window.clearTimeout(timer);
@@ -126,16 +140,22 @@ export class LobbyClient {
       };
       this.listeners.add(onMessage);
     });
+    if (this.socket !== socket || this.generation !== generation || this.stopped) throw new Error("이전 연결입니다.");
     const data = result.data as { session: SavedSession; resumed: boolean };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data.session));
     this.onSession(data.session, data.resumed);
+    const beforeSnapshot = this.snapshotVersion;
+    await this.request("lobby.snapshot.request");
+    if (this.snapshotVersion === beforeSnapshot) throw new Error("서버 스냅샷을 받지 못했습니다. 복구를 다시 시도합니다.");
+    if (this.socket !== socket || this.generation !== generation || this.stopped) throw new Error("이전 연결입니다.");
     this.onStatus("connected");
     this.beginHeartbeat();
-    void this.request("lobby.snapshot.request");
     return data.session;
   }
 
   private handleMessage(message: Record<string, unknown>): void {
+    if (message.type === "server.storage") this.onStatus(message.available ? "connected" : "reconnecting", message.available ? undefined : "서버 저장소 장애로 입력을 중지했습니다. 복구 결과를 기다립니다.");
+    if (message.type === "heartbeat.request") this.sendHeartbeat();
     if (message.type === "command.result" && (message.data as any)?.snapshot) { void this.request("lobby.snapshot.request").catch(() => {}); }
     if (message.type === "command.result" || message.type === "server.error") {
       const requestId = String(message.requestId ?? "");
@@ -149,27 +169,39 @@ export class LobbyClient {
     }
     if (message.type === "lobby.snapshot" && message.snapshot && typeof message.snapshot === "object") {
       this.onSnapshot(message.snapshot as LobbyState);
+      this.snapshotVersion++;
     }
     for (const listener of this.listeners) listener(message);
   }
 
   private parse(data: unknown): Record<string, unknown> | null {
-    try { const value: unknown = JSON.parse(String(data)); return value && typeof value === "object" ? value as Record<string, unknown> : null; }
+    try { const parsed = parseServerJson(String(data)); return parsed.ok ? parsed.value as unknown as Record<string, unknown> : null; }
     catch { return null; }
   }
 
   private beginHeartbeat(): void {
     if (this.heartbeat !== null) window.clearInterval(this.heartbeat);
+    this.lastReceived = performance.now();
+    this.lastSent = performance.now();
     this.heartbeat = window.setInterval(() => {
-      if (this.socket?.readyState !== WebSocket.OPEN) return;
-      const requestId = crypto.randomUUID();
-      this.socket.send(JSON.stringify({ protocolVersion: PROTOCOL_VERSION, type: "heartbeat", requestId, sentAtUtc: new Date().toISOString() }));
-    }, 10_000);
+      const socket = this.socket;
+      if (!socket || socket.readyState !== WebSocket.OPEN) return;
+      if (performance.now() - this.lastReceived >= 30_000) { this.onSocketClose(socket); socket.close(); return; }
+      if (performance.now() - this.lastSent >= 15_000) this.sendHeartbeat();
+    }, 1000);
   }
-
+  private sendHeartbeat(): void {
+    if (this.socket?.readyState !== WebSocket.OPEN) return;
+    this.lastSent = performance.now();
+    this.socket.send(JSON.stringify({ protocolVersion: PROTOCOL_VERSION, type: "heartbeat", requestId: crypto.randomUUID(), sentAtUtc: new Date().toISOString() }));
+  }
   private onSocketClose(socket: WebSocket): void {
     if (this.socket !== socket) return;
     this.socket = null;
+    this.generation++;
+    for (const [id, command] of this.commands) {
+      clearTimeout(command.timer); command.reject(new Error("연결 복구 후 서버 상태를 확인하세요.")); this.commands.delete(id);
+    }
     if (this.heartbeat !== null) window.clearInterval(this.heartbeat);
     this.heartbeat = null;
     if (!this.stopped) {
@@ -179,19 +211,30 @@ export class LobbyClient {
   }
 
   private async reconnect(): Promise<void> {
+    const epoch = ++this.reconnectEpoch;
     this.reconnecting = true;
-    const until = Date.now() + 11_000;
-    while (!this.stopped && Date.now() < until) {
-      await new Promise((resolve) => window.setTimeout(resolve, 800));
+    const until = Date.now() + 60_000;
+    let attempt = 0;
+    while (!this.stopped && epoch === this.reconnectEpoch && Date.now() < until) {
+      await new Promise((resolve) => window.setTimeout(resolve, reconnectDelay(attempt++)));
+      if (this.stopped || epoch !== this.reconnectEpoch || Date.now() >= until) break;
       const session = loadSavedSession();
       if (!session) break;
       try {
-        await this.openAndAuthenticate("", session);
+        await this.openAndAuthenticate("", session, Math.min(8000, until - Date.now()));
         this.reconnecting = false;
         return;
-      } catch { /* keep trying during the server reconnect grace */ }
+      } catch { if (epoch !== this.reconnectEpoch) return; const failed = this.socket; this.socket = null; failed?.close(); }
     }
+    if (epoch !== this.reconnectEpoch) return;
     this.reconnecting = false;
     if (!this.stopped) this.onStatus("failed", "세션 복구 시간이 끝났습니다. 재시도하거나 혼자 놀기를 선택하세요.");
   }
+}
+
+/** User-authorized bounded exponential backoff with jitter (RFC 6455 §7.2.3). */
+export const RECONNECT_INTERVALS_MS = [500, 1000, 2000, 4000, 8000] as const;
+export function reconnectDelay(attempt: number, random = Math.random): number {
+  const base = RECONNECT_INTERVALS_MS[Math.min(attempt, RECONNECT_INTERVALS_MS.length - 1)]!;
+  return attempt === 0 ? Math.round(1000 * random()) : Math.round(base * (0.8 + 0.4 * random()));
 }

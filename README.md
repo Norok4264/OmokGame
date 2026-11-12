@@ -57,3 +57,5 @@ npm run check:server
 
 상세한 현재 상태는 `docs/handoff.md`, 요구사항 출처는 `docs/requirements.md`, 메시지 계약은 `docs/protocol.md`, 검증 상태는 `docs/acceptance.md`를 참고하세요.
 Codex 계정을 바꾸고 같은 PC 작업 폴더에서 이어갈 때는 `docs/account-switch-handoff.md`를 먼저 읽으세요.
+
+최신 복구: 15초 heartbeat, 30초 단절 확인, 60초 복귀 유예. 재인증 후 스냅샷으로 복구하며 기존 턴 마감을 유지합니다. 서버 재시작·DB 장애로 정상 진행하지 못한 ACTIVE는 시스템 무효 종료합니다. 검증 결과와 한계: [docs/recovery-policy.md](docs/recovery-policy.md).

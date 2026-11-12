@@ -157,8 +157,8 @@ describe("real WebSocket sessions and challenge lifecycle", () => {
         expect(db.prepare("SELECT status,revision FROM games WHERE game_id=?").get(acceptResult.data.gameId)).toEqual({ status: "ACTIVE", revision: revision + 1 });
         db.exec("DROP TRIGGER fail_online_result");
         applicant.send("game.resign", "resign-online", { gameId: acceptResult.data.gameId, expectedRevision: revision + 1 });
-        expect(await applicant.command("resign-online")).toMatchObject({ data: { snapshot: { result: { winner: "BLACK" }, endReason: "RESIGNATION" } } });
-        const finished = (m: Message) => m.type === "lobby.snapshot" && m.snapshot?.game?.status === "FINISHED";
+        expect(await applicant.command("resign-online")).toMatchObject({ type: "server.error", code: "GAME_NOT_ACTIVE" });
+        const finished = (m: Message) => m.type === "lobby.snapshot" && m.snapshot?.game?.status === "ABORTED";
         const [whiteResult, blackResult] = await Promise.all([applicant.waitFor(finished), recipient.waitFor(finished)]);
         expect(whiteResult.snapshot.game.revision).toBe(blackResult.snapshot.game.revision);
         expect(whiteResult.snapshot.game.result).toEqual(blackResult.snapshot.game.result);
