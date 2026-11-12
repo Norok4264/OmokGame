@@ -20,10 +20,14 @@ export interface ClientEnvelope {
 
 export type ClientMessage =
   | (ClientEnvelope & { type: "client.hello"; clientBuild: string })
+  | (ClientEnvelope & { type: "session.start"; nickname: string })
+  | (ClientEnvelope & { type: "session.resume"; token: string })
+  | (ClientEnvelope & { type: "session.end" })
   | (ClientEnvelope & { type: "lobby.snapshot.request" })
   | (ClientEnvelope & { type: "challenge.create"; targetPlayerId: PlayerId })
   | (ClientEnvelope & { type: "challenge.respond"; challengeId: ChallengeId; accept: boolean })
   | (ClientEnvelope & { type: "challenge.cancel"; challengeId: ChallengeId })
+  | (ClientEnvelope & { type: "game.cancel"; gameId: GameId })
   | (ClientEnvelope & { type: "game.ready"; gameId: GameId; revision: GameRevision })
   | (ClientEnvelope & {
       type: "game.move.propose";
@@ -96,6 +100,7 @@ export type ServerMessage =
   | CommandFailure
   | ServerSnapshotMessage
   | ChatMessageEvent
+  | { protocolVersion: typeof PROTOCOL_VERSION; type: "lobby.snapshot"; snapshot: Record<string, unknown> }
   | {
       protocolVersion: typeof PROTOCOL_VERSION;
       type: "game.event";
@@ -168,6 +173,14 @@ export function parseClientMessage(input: unknown): ParseResult<ClientMessage> {
     case "client.hello":
       if (!text(value.clientBuild, 80)) return bad("clientBuild");
       break;
+    case "session.start":
+      if (typeof value.nickname !== "string" || value.nickname.length > 80) return bad("nickname");
+      break;
+    case "session.resume":
+      if (!text(value.token, 256)) return bad("token");
+      break;
+    case "session.end":
+      break;
     case "lobby.snapshot.request":
       break;
     case "challenge.create":
@@ -178,6 +191,9 @@ export function parseClientMessage(input: unknown): ParseResult<ClientMessage> {
       break;
     case "challenge.cancel":
       if (!text(value.challengeId, 128)) return bad("challengeId");
+      break;
+    case "game.cancel":
+      if (!text(value.gameId, 128)) return bad("gameId");
       break;
     case "game.ready":
     case "game.retry.request":
@@ -238,6 +254,9 @@ export function parseServerMessage(input: unknown): ParseResult<ServerMessage> {
       if (!(input.requestId === null || text(input.requestId, 128)) || !isRecord(input.snapshot)) {
         return failed("INVALID_FIELD", "Invalid snapshot envelope");
       }
+      break;
+    case "lobby.snapshot":
+      if (!isRecord(input.snapshot)) return failed("INVALID_FIELD", "Invalid lobby snapshot");
       break;
     case "chat.message":
       if (

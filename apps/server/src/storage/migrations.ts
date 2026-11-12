@@ -86,6 +86,30 @@ export const migrations: readonly Migration[] = [
       CREATE INDEX sessions_by_expiry ON player_sessions(expires_at_utc);
     `,
   },
+  {
+    version: 2,
+    name: "lobby_atomic_sessions_and_preparation",
+    sql: `
+      CREATE TABLE challenge_cooldowns (
+        applicant_player_id TEXT NOT NULL REFERENCES players(player_id),
+        acceptor_player_id TEXT NOT NULL REFERENCES players(player_id),
+        requested_at_utc TEXT NOT NULL,
+        PRIMARY KEY (applicant_player_id, acceptor_player_id)
+      );
+      CREATE TABLE game_preparation (
+        game_id TEXT PRIMARY KEY REFERENCES games(game_id) ON DELETE CASCADE,
+        deadline_utc TEXT NOT NULL,
+        white_ready INTEGER NOT NULL DEFAULT 0 CHECK (white_ready IN (0,1)),
+        black_ready INTEGER NOT NULL DEFAULT 0 CHECK (black_ready IN (0,1)),
+        countdown_started_at_utc TEXT
+      );
+      CREATE UNIQUE INDEX one_pending_outgoing_challenge
+        ON challenges(applicant_player_id) WHERE status = 'PENDING';
+      CREATE UNIQUE INDEX one_pending_incoming_challenge
+        ON challenges(acceptor_player_id) WHERE status = 'PENDING';
+      CREATE INDEX preparation_deadline ON game_preparation(deadline_utc);
+    `,
+  },
 ];
 
 export function runMigrations(db: SqliteDatabase): void {

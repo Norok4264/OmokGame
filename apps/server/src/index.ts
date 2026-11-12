@@ -17,13 +17,14 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 }
 
 const db = openDatabase(databasePath);
-const { httpServer, webSocketServer } = createApplicationServer(db);
+const { httpServer, webSocketServer, lobby } = createApplicationServer(db);
 
 httpServer.listen(port, host, () => {
   process.stdout.write(`danpan-omok server listening on http://${host}:${port}\n`);
 });
 
 function shutdown(): void {
+  lobby.close();
   webSocketServer.close();
   httpServer.close(() => {
     db.close();

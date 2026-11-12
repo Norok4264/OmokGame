@@ -24,10 +24,10 @@
 | ID | 확인 대상 | 현재 상태 |
 |---|---|---|
 | A01 | PC-PC, PC-Android, Android-Android 실기 조합 | 미검증 — 실기기 대국 미구현 |
-| A02 | 닉네임 공란·중복·정규화·동시 등록·초기화 | 미검증 |
-| A03 | 신청·취소·승낙·거부·만료·준비 실패 | 미검증 |
+| A02 | 닉네임 공란·중복·정규화·동시 등록·초기화 | 부분 확인 — 실제 WSS 두 클라이언트에서 대소문자/NFKC 정규화 충돌 거부, guestN 중복 없는 발급, 해시 토큰 복구, 접속 이름 중복을 확인. 원문 기획서의 전체 허용문자/예약어 목록 대조와 오프라인 grace 만료 실기 검증은 미확인 |
+| A03 | 신청·취소·승낙·거부·만료·준비 실패 | 부분 확인 — 실제 WSS에서 동시 상호 신청 중 한 건만 생성, 신청자 취소/상대 응답 경합, 수신 권한, 신청자 백·승낙자 흑, 준비 완료·3초 뒤 ACTIVE, 시작 전 취소/준비 초과 CANCELLED를 확인. 30초 실시간 만료 화면은 미확인 |
 | A04 | 15×15 자유룰, 5목·장목 승리, 금수 없음, 마지막 칸 승리 우선 | 부분 확인 — 순수 규칙 로컬 테스트 통과; 온라인·화면 연동 미검증 |
-| A05 | 후보/미리보기/확정, 서버 검증, 양쪽 보드 일치 | 부분 확인 — 360px·1280px 브라우저 화면에서 후보 표식/좌표/확정 UI 확인; 온라인 화면 승인은 로컬 가상 절차. 실제 서버 승인·양측 동기화 미검증 |
+| A05 | 후보/미리보기/확정, 서버 검증, 양쪽 보드 일치 | 부분 확인 — 360px·1280px 브라우저 화면에서 후보 표식/좌표/확정 UI 확인; 신청·승낙 뒤 실제 서버 대국 준비는 연결. 실제 서버 착수 승인·양측 보드 동기화는 미구현 |
 | A06 | 승리·시간패·기권·단절패·무승부·무효 | 미검증 |
 | A07 | 패자 재도전 요청, 상대 승낙, 배정·새 판 초기화 | 미검증 |
 | A08 | 대국 채팅 격리·표시·한글·스크롤·종료 후 읽기 | 미검증 |
@@ -53,7 +53,7 @@
 | 확인 | 실제 결과 | 범위 |
 |---|---|---|
 | 루트 타입 검사 | `pnpm dlx npm@12.2.2 run typecheck` 종료 코드 0 | Codex 작업환경 |
-| 루트 테스트 | 최신 2단계: 4 files/25 tests passed (이전 1단계 기준선은 3 files/8 tests) | 공통 메시지 검증, SQLite migration/저장소, HTTP readiness, 규칙 |
+| 루트 테스트 | 최신 4단계: 6 files/38 tests passed (2단계 기준선은 4 files/25 tests) | 공통 메시지 검증, SQLite migration/저장소, HTTP readiness, 규칙, 실제 로컬 WSS 클라이언트 두 개 통합 |
 | 루트 빌드 | `pnpm dlx npm@12.2.2 run build` 성공; 웹 Vite 산출물 생성 | Codex 작업환경 빌드 |
 | 웹 개발 주소 (1단계 기준선) | `http://127.0.0.1:5173/` HTTP 200, 제목 `단판 오목` | 당시 화면 캡처 미수집; 3단계 viewport 화면 관찰은 아래 별도 기록 |
 | 서버 health | `/healthz`: `{"status":"ok","service":"danpan-omok-server"}` | 로컬 HTTP |
@@ -89,6 +89,26 @@
 | 모션/시각 디자인 | 살구색 배경, 명시적 나무 격자선, 명암 돌, 파랑/빨강 메시지, 팝업 외부 흐림, reduced-motion에서 착수/봇 애니메이션 비활성화 | 대비 수치나 보조공학 검증 없음 |
 
 브라우저 캡처는 검수 중 실제 렌더로 열어 확인했으나 PNG/JPEG 증거 파일로 작업 폴더에 보관하지 않았다. 자세한 캡처 조건은 [`evidence-index.md`](evidence-index.md)의 E3-01에 기록했다.
+
+## 4단계 실제 WebSocket 세션·대기열·신청
+
+| 확인 | 결과 | 범위와 한계 |
+|---|---|---|
+| 닉네임/세션 A02 | NFKC·trim·대소문자 무시 정규화, duplicate 거부, 공란 guest1/guest2 원자 발급, 토큰 32바이트 무작위 발급과 DB 해시 저장, 같은 토큰 세션 복구를 두 WebSocket 클라이언트로 확인 | 원문 개발 기준 파일이 작업환경에 없어 전체 허용문자/예약어 목록의 정확한 대조는 미완료 |
+| 신청 경합 A03 | Alice↔Bobby 양방향 동시 신청에서 SQLite 처리 뒤 한 신청만 남고 한 명은 거부됨; 사용자당 pending 제한 확인 | 동일 프로세스 2소켓 로컬 통합 시험. 외부 여러 서버 프로세스/배포 구성은 미검증 |
+| 권한과 역할 A03 | 신청자와 제3자의 응답을 거부하고 초대받은 상대만 거부할 수 있음. 수신자가 승낙할 때 DB white=applicant, black=acceptor 저장 | 이후 대국 착수 권한 및 board sync 미구현 |
+| 신청 취소/승낙 경합 | 두 클라이언트가 동시에 cancel/accept 전송; 한 요청만 성공, 연결된 challenge game 수는 최대 1 | 두 경합 순서 중 실행 때 실제로 관찰한 순서를 테스트 결과에 한정. 코드 조건부 transition도 추가로 검증 |
+| 재요청 제한 | 취소로 신청이 끝난 경합 경로에서 즉시 같은 상대를 다시 요청하면 `CHALLENGE_COOLDOWN` 확인 | 10초 전체 대기 후 경계 시각(9,999/10,000ms)은 가짜 시계로 시험하지 않음 |
+| 준비·취소 A03 | 양측 준비 값을 SQLite에 저장, 3초 뒤 ACTIVE 스냅샷 전달, 명시적 준비 취소와 테스트용 단축 timeout이 CANCELLED/NULL reason인 것 확인 | 준비 10초 기본 상한을 테스트에선 주입 가능한 120ms 값으로 빠르게 확인; 실제 10초 대기 경계 자체는 미측정 |
+| 로컬 검사 | shared/server/web TypeScript 검사, `vitest run`, server TypeScript build 및 `vite build`를 로컬 `node_modules/.bin` 실행 파일로 수행 | 타입·빌드 성공, 6 files/39 tests 통과. Codex Windows 작업환경 한정 |
+| 서버 HTTP | `node apps/server/dist/index.js`, Vite 개발 서버를 각각 실행하고 PowerShell `Invoke-WebRequest`/`Invoke-RestMethod`로 조회 | 웹 200 및 제목 확인, `/healthz` `ok`, `/readyz` `ready`와 `checks.sqlite=true`. 두 프로세스는 확인 후 종료 |
+| 실행기 한계 | 마지막 `pnpm dlx npm@12.2.2 run typecheck/build` 실행에서 `realpath C:\Users\Administrator` EPERM, `node scripts/dev.mjs`에서 tsx의 `uv_os_get_passwd` ENOMEM | 애플리케이션 오류로 단정하지 않음. 로컬 바이너리 검증과 컴파일 서버+Vite 별도 실행으로 대체 확인. root dev 재실행은 이 원격 셸에서 미확인 |
+
+위 WebSocket 테스트는 실제 `ws` 서버와 독립된 두 클라이언트 소켓의 localhost 통신이다. 다른 PC/네트워크·WSS TLS·사용자 브라우저 UI에서의 실제 신청은 증명하지 않는다.
+
+## Codex 계정 전환 인수인계
+
+이전 계정 전환 기준 `29686d0` 뒤 실제 WSS 세션·신청 구현과 문서 변경이 추가됐다. 새 계정에서 현재 `git status`/HEAD부터 확인하고 이전 해시를 최신 상태로 간주하지 않는다. 계정 전환 절차는 [`account-switch-handoff.md`](account-switch-handoff.md)에 둔다.
 
 ## 현재 환경 확인표
 

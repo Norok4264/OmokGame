@@ -11,6 +11,8 @@ import {
   type StoneColor,
 } from "@danpan/shared";
 import { chooseBotMove } from "./bot.js";
+import { clearSavedSession, loadSavedSession, LobbyClient } from "./lobby-client.js";
+import type { LobbyClient as LobbyClientType, LobbyState, LobbyStatus, SavedSession } from "./lobby-client.js";
 
 type Screen = "home" | "queue" | "online" | "solo";
 type GameMode = "online-demo" | "solo";
@@ -37,6 +39,13 @@ export function App() {
   const [effectiveName, setEffectiveName] = useState("");
   const [probeState, setProbeState] = useState<ProbeState>("checking");
   const [probeMessage, setProbeMessage] = useState("");
+  const [lobbyState, setLobbyState] = useState<LobbyState | null>(null);
+  const [lobbyStatus, setLobbyStatus] = useState<LobbyStatus>("ended");
+  const [lobbyError, setLobbyError] = useState("");
+  const [selectedTarget, setSelectedTarget] = useState<{ playerId: string; nickname: string } | null>(null);
+  const [lobbyBusy, setLobbyBusy] = useState(false);
+  const [countdownSeconds, setCountdownSeconds] = useState(3);
+  const [clockNow, setClockNow] = useState(() => Date.now());
   const [connection, setConnection] = useState<DemoConnection>("connected");
   const [game, setGame] = useState<RuleGameState | null>(null);
   const [candidate, setCandidate] = useState<Coordinate | null>(null);
@@ -54,6 +63,7 @@ export function App() {
   const boardRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number | null>(null);
+  const lobbyClientRef = useRef<LobbyClientType | null>(null);
 
   const myColor: StoneColor = "WHITE";
   const isGameScreen = screen === "online" || screen === "solo";
@@ -65,27 +75,73 @@ export function App() {
   );
   const candidateLabel = candidate ? toScreenCoordinate(candidate) : null;
 
-  const checkServer = useCallback(async () => {
+  const connectLobby = useCallback(async (name: string, saved: SavedSession | null = null) => {
     setProbeState("checking");
-    setProbeMessage("대기열 API와 서버 준비 상태를 확인합니다.");
+    setProbeMessage("8초 안에 WebSocket 서버 연결과 세션 인증을 확인합니다.");
+    setLobbyError("");
+    setGame(null);
+    setLobbyState(null);
+    const old = lobbyClientRef.current;
+    old?.stop();
+    const client = new LobbyClient();
+    lobbyClientRef.current = client;
+    client.onStatus = (status, detail) => {
+      setLobbyStatus(status);
+      if (detail) setLobbyError(detail);
+      if (status === "connected") {
+        setLobbyError("");
+        setProbeState("ready");
+        setProbeMessage("WebSocket 세션 인증 완료. 대기열과 신청은 서버 상태입니다.");
+      } else if (status === "reconnecting") {
+        setProbeMessage("연결이 끊겼습니다. 12초 복귀 유예 안에 세션을 복구합니다.");
+      } else if (status === "failed") {
+        setProbeState("unavailable");
+      }
+    };
+    client.onSnapshot = (snapshot) => {
+      setLobbyState(snapshot);
+      setEffectiveName(snapshot.me.nickname);
+      if (snapshot.game) setScreen("online");
+      else setScreen("queue");
+      if (snapshot.game?.status === "PREPARING") setConnection("connected");
+    };
+    client.onSession = (session, resumed) => {
+      setEffectiveName(session.nickname);
+      setNickname("");
+      setProbeMessage(resumed ? "기존 sessionStorage 토큰으로 세션을 복구했습니다." : "새 서버 세션을 만들었습니다.");
+    };
     try {
-      const response = await fetch("/api/readyz", { cache: "no-store" });
-      if (!response.ok) throw new Error("서버가 HTTP " + response.status + "를 반환했습니다.");
-      const body = await response.json() as { status?: string };
-      if (body.status !== "ready") throw new Error("서버가 아직 준비되지 않았습니다.");
-      setProbeState("ready");
-      setProbeMessage("HTTP readiness 확인 성공. 대기열 기능은 아직 서버에 연결되지 않았습니다.");
+      setScreen("queue");
+      await client.start(name, saved);
     } catch (error) {
+      client.stop();
       setProbeState("unavailable");
-      setProbeMessage(error instanceof Error
-        ? error.message + " 개발 서버가 켜져 있는지 확인하고 다시 시도하세요."
-        : "서버 연결을 확인할 수 없습니다. 개발 서버를 확인하고 다시 시도하세요.");
+      setLobbyStatus("failed");
+      setLobbyError(error instanceof Error ? error.message : "서버 연결 또는 세션 인증에 실패했습니다.");
+      setProbeMessage("연결에 실패했습니다. 재시도하거나 혼자 놀기를 선택하세요.");
     }
   }, []);
 
   useEffect(() => {
-    if (screen === "queue") void checkServer();
-  }, [screen, checkServer]);
+    const saved = loadSavedSession();
+    if (saved) void connectLobby("", saved);
+    return () => lobbyClientRef.current?.stop();
+  }, [connectLobby]);
+
+  useEffect(() => {
+    const gameInfo = lobbyState?.game;
+    if (!gameInfo?.countdownStartedAtUtc) { setCountdownSeconds(3); return; }
+    const update = () => setCountdownSeconds(Math.max(0, 3 - Math.floor((Date.now() - Date.parse(gameInfo.countdownStartedAtUtc!)) / 1000)));
+    update();
+    const interval = window.setInterval(update, 200);
+    return () => window.clearInterval(interval);
+  }, [lobbyState?.game?.countdownStartedAtUtc]);
+
+  useEffect(() => {
+    if (screen !== "queue" || !lobbyState?.challenges.length) return;
+    const interval = window.setInterval(() => setClockNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [screen, lobbyState?.challenges.length]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -169,10 +225,37 @@ export function App() {
     }
   }, []);
 
-  const openQueue = () => {
-    setEffectiveName(nickname.trim() || "guest1");
-    setProbeState("checking");
-    setProbeMessage("");
+  const openQueue = () => { void connectLobby(nickname); };
+
+  const returnHome = async () => {
+    const client = lobbyClientRef.current;
+    if (client && lobbyStatus === "connected") {
+      try { await client.request("session.end"); } catch { /* local reset still ends this client's credentials */ }
+    }
+    client?.stop();
+    lobbyClientRef.current = null;
+    clearSavedSession();
+    setLobbyState(null);
+    setSelectedTarget(null);
+    setEffectiveName("");
+    setNickname("");
+    setLobbyError("");
+    setScreen("home");
+  };
+
+  const runLobbyCommand = async (type: string, body: Record<string, unknown> = {}) => {
+    if (!lobbyClientRef.current || lobbyBusy) return;
+    setLobbyBusy(true);
+    setLobbyError("");
+    try { await lobbyClientRef.current.request(type, body); setSelectedTarget(null); }
+    catch (error) { setLobbyError(error instanceof Error ? error.message : "서버가 요청을 처리하지 못했습니다."); }
+    finally { setLobbyBusy(false); }
+  };
+
+  const cancelPreparation = async () => {
+    const gameId = lobbyState?.game?.gameId;
+    if (!gameId) { setScreen("queue"); return; }
+    await runLobbyCommand("game.cancel", { gameId });
     setScreen("queue");
   };
 
@@ -221,7 +304,16 @@ export function App() {
     }, botMode === "solo" ? 620 : 520);
   }, [animateAcceptedMove, showFinishedGame]);
 
-  const startSolo = () => {
+  const startSolo = async () => {
+    const client = lobbyClientRef.current;
+    if (client) {
+      try { await client.request("session.end"); } catch { /* local credentials are still cleared below */ }
+      client.stop();
+      lobbyClientRef.current = null;
+      clearSavedSession();
+      setLobbyState(null);
+      setEffectiveName("");
+    }
     const fresh = createRuleGame();
     setMode("solo");
     setGame(fresh);
@@ -349,13 +441,10 @@ export function App() {
     setCandidate(null);
     setSaveState("idle");
     if (mode === "solo") {
-      setScreen("home");
-      setNickname("");
-      setEffectiveName("");
+      void returnHome();
     } else {
       setScreen("queue");
-      setProbeState("ready");
-      setProbeMessage("대기열은 실제 서버 기능에 연결되지 않았습니다. 아래 선택은 화면 확인용입니다.");
+      void lobbyClientRef.current?.request("lobby.snapshot.request");
     }
   };
 
@@ -460,9 +549,9 @@ export function App() {
               id="nickname"
               value={nickname}
               onChange={(event) => setNickname(event.target.value)}
-              maxLength={16}
+              maxLength={12}
               autoComplete="nickname"
-              placeholder="비워 두면 guest1로 표시"
+              placeholder="2~12글자 · 비우면 guestN 발급"
             />
             <button className="button button-primary button-large" type="button" onClick={openQueue}>
               대기열 입장 <span aria-hidden="true">→</span>
@@ -479,39 +568,95 @@ export function App() {
 
       {screen === "queue" && (
         <section className="page-screen queue-screen" aria-labelledby="queue-title">
-          <AppHeader onHome={() => setScreen("home")} />
+          <AppHeader onHome={() => void returnHome()} />
           <div className="queue-card">
-            <div className="section-kicker">ONLINE LOBBY · DEVELOPMENT PREVIEW</div>
+            <div className="section-kicker">ONLINE LOBBY · SERVER SESSION</div>
             <h1 id="queue-title">대기열</h1>
-            <p className="queue-greeting"><strong>{effectiveName || "guest1"}</strong> 님, 함께 둘 상대를 기다립니다.</p>
+            <p className="queue-greeting"><strong>{effectiveName || "닉네임 확인 중"}</strong> 님, 접속자 목록에서 함께 둘 상대를 선택하세요.</p>
             <div className={"connection-panel connection-" + probeState} role="status" aria-live="polite">
-              <span className="status-symbol" aria-hidden="true">{probeState === "ready" ? "✓" : probeState === "checking" ? "…" : "!"}</span>
+              <span className="status-symbol" aria-hidden="true">{lobbyStatus === "connected" ? "✓" : lobbyStatus === "reconnecting" || lobbyStatus === "connecting" ? "…" : "!"}</span>
               <div>
-                <strong>{probeState === "ready" ? "서버 readiness 확인 완료" : probeState === "checking" ? "서버 상태 확인 중" : "서버에 연결할 수 없습니다"}</strong>
-                <p>{probeMessage || "확인 결과에 따라 다시 시도할 방법을 안내합니다."}</p>
+                <strong>{lobbyStatus === "connected" ? "실제 WebSocket 세션 연결됨" : lobbyStatus === "reconnecting" ? "세션 복구 중" : lobbyStatus === "connecting" ? "서버 연결·인증 확인 중" : "서버 세션 연결 실패"}</strong>
+                <p>{lobbyError || probeMessage || "연결 상태를 확인합니다."}</p>
               </div>
             </div>
-            <div className="empty-queue">
-              <div className="empty-stones" aria-hidden="true"><i /><i /></div>
-              <strong>대기 중인 상대가 없습니다</strong>
-              <p>현재 서버에는 온라인 대기열 기능이 없습니다.<br />아래 숫자와 상대는 실제 접속자가 아닌 화면용 예시입니다.</p>
-              <div className="queue-count"><span className="status-dot" /> 예시 대기 인원 <b>0명</b></div>
-            </div>
+            {lobbyState && (
+              <div className="lobby-roster" aria-label="실제 서버 접속자 목록">
+                <div className="roster-heading"><strong>접속자</strong><span>{lobbyState.players.length}명 · 서버 목록</span></div>
+                {lobbyState.players.map((player) => {
+                  const isMe = player.playerId === lobbyState.me.playerId;
+                  const label = player.state === "WAITING" ? "대기" : player.state === "RESPONDING" ? "응답 중" : player.state === "IN_GAME" ? "대국 중" : "재접속 중";
+                  const canChallenge = !isMe && player.state === "WAITING" && lobbyState.me.state === "WAITING" && lobbyStatus === "connected";
+                  return <button key={player.playerId} type="button" className={"roster-player " + (selectedTarget?.playerId === player.playerId ? "roster-selected" : "")}
+                    onClick={() => canChallenge && setSelectedTarget({ playerId: player.playerId, nickname: player.nickname })} disabled={!canChallenge}>
+                    <span className="roster-presence" /><strong>{player.nickname}{isMe ? " (나)" : ""}</strong><span>{label}</span>
+                  </button>;
+                })}
+                {lobbyState.players.length === 1 && <p className="empty-roster">아직 다른 접속자가 없습니다. 상대가 접속하면 여기에 표시됩니다.</p>}
+              </div>
+            )}
+            {selectedTarget && <div className="challenge-confirm" role="group" aria-label="대국 신청 확인">
+              <strong>{selectedTarget.nickname} 님에게 대국을 신청할까요?</strong>
+              <p>신청자는 백·후공, 승낙자는 흑·선공으로 배정됩니다. 신청은 30초 동안 유효하며 같은 상대 재신청은 10초 뒤 가능합니다.</p>
+              <div><button className="button button-primary" disabled={lobbyBusy} onClick={() => void runLobbyCommand("challenge.create", { targetPlayerId: selectedTarget.playerId })}>신청 보내기</button>
+                <button className="button button-quiet" disabled={lobbyBusy} onClick={() => setSelectedTarget(null)}>취소</button></div>
+            </div>}
+            {lobbyState?.challenges.map((challenge) => {
+              const outgoing = challenge.applicantPlayerId === lobbyState.me.playerId;
+              const otherId = outgoing ? challenge.acceptorPlayerId : challenge.applicantPlayerId;
+              const other = lobbyState.players.find((player) => player.playerId === otherId)?.nickname ?? "상대";
+              const seconds = Math.max(0, Math.ceil((Date.parse(challenge.responseDeadlineUtc) - clockNow) / 1000));
+              return <div className="challenge-confirm" key={challenge.challengeId}>
+                {outgoing ? <><strong>{other} 님의 응답을 기다립니다 · {seconds}초</strong><p>신청자 백·후공 배정입니다. 상대가 승낙하기 전까지 신청을 취소할 수 있습니다.</p>
+                  <button className="button button-quiet" disabled={lobbyBusy} onClick={() => void runLobbyCommand("challenge.cancel", { challengeId: challenge.challengeId })}>신청 취소</button></>
+                  : <><strong>{other} 님이 대국을 신청했습니다</strong><p>신청자는 백·후공, 승낙하는 당신은 흑·선공입니다 · {seconds}초</p>
+                    <div><button className="button button-primary" disabled={lobbyBusy} onClick={() => void runLobbyCommand("challenge.respond", { challengeId: challenge.challengeId, accept: true })}>승낙</button>
+                      <button className="button button-quiet" disabled={lobbyBusy} onClick={() => void runLobbyCommand("challenge.respond", { challengeId: challenge.challengeId, accept: false })}>거부</button></div></>}
+              </div>;
+            })}
+            {lobbyError && <p className="lobby-error" role="alert">{lobbyError}</p>}
             <div className="queue-actions">
-              <button className="button button-primary button-large" type="button" onClick={() => void checkServer()}>
-                서버 상태 다시 확인
-              </button>
-              <button className="button button-secondary button-large" type="button" onClick={openOnlinePreview}>
-                개발용 대국 화면 보기
-              </button>
-              <button className="button button-quiet" type="button" onClick={() => setScreen("home")}>초기 화면으로</button>
+              {lobbyStatus !== "connected" && <button className="button button-primary button-large" type="button" onClick={() => void connectLobby(nickname, loadSavedSession())}>
+                WebSocket 재시도
+              </button>}
+              <button className="button button-secondary button-large" type="button" onClick={startSolo}>혼자 놀기</button>
+              <button className="button button-quiet" type="button" onClick={() => void returnHome()}>초기 화면으로 · 세션 초기화</button>
             </div>
           </div>
-          <div className="demo-banner"><span>DEVELOPMENT PREVIEW</span> 대기열 화면의 상태·인원은 임시 데이터입니다. 매칭 서버에 연결하지 않습니다.</div>
         </section>
       )}
 
-      {isGameScreen && selectedGame && (
+      {screen === "online" && lobbyState?.game && (
+        <section className="page-screen queue-screen preparation-screen" aria-labelledby="preparation-title">
+          <AppHeader onHome={() => void cancelPreparation()} eyebrow="실제 WebSocket 대국 신청" />
+          <div className="queue-card preparation-card">
+            <div className="section-kicker">SERVER CREATED GAME · {lobbyState.game.status}</div>
+            <h1 id="preparation-title">대국 준비</h1>
+            <p className="queue-greeting"><strong>{effectiveName}</strong> 님 · 상대 <strong>{lobbyState.game.opponentName}</strong></p>
+            <div className="preparation-pair">
+              <div><span className="player-stone player-stone-white" /><strong>{lobbyState.game.color === "WHITE" ? effectiveName : lobbyState.game.opponentName}</strong><small>백 · 후공</small></div>
+              <span>VS</span>
+              <div><span className="player-stone player-stone-black" /><strong>{lobbyState.game.color === "BLACK" ? effectiveName : lobbyState.game.opponentName}</strong><small>흑 · 선공</small></div>
+            </div>
+            <div className="connection-panel connection-ready" role="status" aria-live="polite">
+              <span className="status-symbol">{lobbyState.game.status === "ACTIVE" ? "✓" : "…"}</span>
+              <div><strong>{lobbyState.game.status === "PREPARING" ? "양쪽 준비를 기다립니다" : "대국 시작 안내 완료"}</strong>
+                <p>{lobbyState.game.status === "PREPARING"
+                  ? lobbyState.game.countdownStartedAtUtc ? `양쪽 준비 완료 · ${countdownSeconds}초 뒤 시작합니다.` : "대국은 최대 10초 동안 준비합니다. 한 명이라도 준비하지 않으면 승패 없이 취소됩니다."
+                  : "준비와 3초 시작 안내가 서버에서 완료됐습니다. 실제 착수 동기화는 다음 구현 단계입니다."}</p></div>
+            </div>
+            {lobbyState.game.status === "PREPARING" && <button className="button button-primary button-large preparation-ready" type="button"
+              disabled={lobbyBusy || (lobbyState.game.color === "WHITE" ? lobbyState.game.ready?.white : lobbyState.game.ready?.black)}
+              onClick={() => void runLobbyCommand("game.ready", { gameId: lobbyState.game!.gameId, revision: 0 })}>
+              {(lobbyState.game.color === "WHITE" ? lobbyState.game.ready?.white : lobbyState.game.ready?.black) ? "준비 완료 · 상대 대기 중" : "대국 준비 완료"}
+            </button>}
+            {lobbyError && <p className="lobby-error" role="alert">{lobbyError}</p>}
+            {lobbyState.game.status === "PREPARING" && <button className="button button-quiet" type="button" disabled={lobbyBusy} onClick={() => void cancelPreparation()}>시작 전 대국 취소하고 대기열로</button>}
+          </div>
+        </section>
+      )}
+
+      {isGameScreen && selectedGame && !(screen === "online" && lobbyState?.game) && (
         <section className="page-screen game-screen" data-game-controls="true" aria-labelledby="game-title">
           <AppHeader
             onHome={() => screen === "online" ? setScreen("queue") : setScreen("home")}
@@ -652,7 +797,7 @@ export function App() {
                 <div className={"recovery-card recovery-" + connection}>
                   {connection === "connected" && <><strong>가상 상대와 연결된 예시</strong><p>실제 소켓 연결은 없습니다.</p></>}
                   {connection === "reconnecting" && <><strong>연결 복구 중</strong><p>화면 시뮬레이션입니다. 실제 서비스는 연결 상태를 확인한 뒤 대기열에서 재입장해야 합니다.</p></>}
-                  {connection === "failed" && <><strong>예시 연결 실패</strong><p>실제 대기열 서버가 구현되지 않았습니다. 서버 readiness를 확인한 뒤 개발용 화면으로 다시 들어가세요.</p><button className="text-button" type="button" onClick={() => void checkServer()}>서버 상태 확인</button></>}
+                  {connection === "failed" && <><strong>예시 연결 실패</strong><p>실제 대기열 서버가 구현되지 않았습니다. 초기 화면에서 서버 세션을 다시 시작하세요.</p></>}
                 </div>
               )}
               {screen === "solo" && (

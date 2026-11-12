@@ -1,18 +1,33 @@
 # 증거 색인
 
 기록 시점: 2026-11-12 (Asia/Seoul)  
-앱 버전: `0.1.0` 화면 개발 단계 (화면 구현, 온라인 대국은 미연결)
+앱 버전: `0.1.0` 화면 및 실제 WebSocket lobby 단계 (보드 착수/실시간 대국은 미연결)
+
+## 4단계 실제 WebSocket 증거
+
+| ID | 요구사항 | 실제 자료와 조건 | 결과/한계 |
+|---|---|---|---|
+| E5-01 | A02 닉네임·세션 | `apps/server/src/lobby.test.ts`, 로컬 HTTP/WSS 서버와 별개 두 client socket; `pnpm dlx npm@12.2.2 test` | NFKC/trim/case normalize, duplicate `Alice` 거부, blank guest1/guest2, token random 발급 후 DB token_hash가 원문과 다름, 같은 token의 session resume 성공. 원문 reserved-name 목록 대조는 미완료 |
+| E5-02 | A03 동시 신청/권한/역할 | 독립 WSS client에서 두 클라이언트 상호 challenge.create 동시 전송, respond/cancel 경합, 제3자 응답, 초대 상대의 decline | 동시 상호 신청 중 한 pending만 생성, 한 판 이하 생성. 신청자 white/후공, 수락자 black/선공. 신청자·제3자의 응답은 `NOT_CHALLENGE_RECIPIENT`로 거절, 초대 상대 거부는 게임 없이 저장 |
+| E5-03 | A03 준비·취소·timeout | 로컬 WSS 2-client 테스트에서 양쪽 ready 후 3초 지나 ACTIVE 스냅샷 수신, 명시 cancel request replay, test-injected preparation timeout | DB에 PREPARING readiness와 countdown UTC 저장, ACTIVE 전파; 취소/준비 만료는 `CANCELLED`, `end_reason=null`. 실서비스 장시간 30초 challenge expiry/10초 timer boundary는 미측정 |
+| E5-04 | 자동 검증 및 readiness | shared/server/web TypeScript 검사, `vitest run`, server TypeScript build, `vite build`; 이어서 컴파일된 localhost 서버+Vite와 PowerShell HTTP 요청 | 6개 테스트 파일/39개 통과, 타입·웹 빌드 성공, 웹 200, `/healthz` ok, `/readyz` ready 및 `checks.sqlite=true`. 마지막 `pnpm dlx npm`/tsx root-dev 재시도는 원격 셸의 realpath/OS user lookup 오류를 냈으므로 직접 로컬 바이너리·분리 실행으로 검증. 외부 PC/네트워크·TLS 실증은 아님 |
 
 ## 3단계 화면 렌더 확인
 
 | ID | 보고서 연결 | 실제 자료와 조건 | 결과/한계 |
 |---|---|---|---|
-| E3-01 | Ⅰ·Ⅲ 화면 구성 및 반응형 | Codex 브라우저에서 `http://127.0.0.1:5173/` 앱 버전 `0.1.0`을 실제 렌더해 확인. viewport 360×800 및 1280×900. 홈, 대기열, 온라인 개발용 대국, 혼자 놀기, 결과 팝업 화면을 관찰 | 모바일/PC 배치, 보드 축, 채팅의 화면 흐름과 팝업 blur를 확인. 브라우저 도구의 캡처 이미지는 확인 시 표시했으나 파일로 보관하지 않음. 사용자 PC·Android 실기기 캡처가 아님 |
+| E3-01 | Ⅰ·Ⅲ 화면 구성 및 반응형 | 4단계 이전 Codex 브라우저에서 `http://127.0.0.1:5173/` 앱 버전 `0.1.0`을 실제 렌더해 확인. viewport 360×800 및 1280×900. 홈, 대기열, 개발용 온라인 대국, 혼자 놀기, 결과 팝업 화면을 관찰 | 4단계 실제 lobby 전의 화면 시뮬레이션이었다. 모바일/PC 배치, 채팅 흐름과 popup blur를 확인. 이미지 파일 미보관, 사용자 PC/Android 실기기 캡처 아님 |
 | E3-02 | A05 입력 UI | 같은 브라우저 세션에서 보드 포커스, 방향키 후보 이동 및 Enter 착수, 후보 표식과 선택 좌표 관찰 | 규칙 엔진 연동 로컬 동작. 온라인 착수는 가상 승인 절차이며 서버 메시지/권한 검증의 증거가 아님 |
 | E3-03 | A11 초점/키보드 | 결과 팝업을 다시 열어 첫 저장 버튼에 초점, Tab으로 나가기 버튼 이동, 다음 Tab에서 첫 버튼으로 순환 확인 | Codex 브라우저 확인. 스크린리더·Android 키보드·WCAG 자동/수동 감사는 미실행 |
 | E3-04 | 대기열 readiness/error 화면 | 첫 root dev 확인에서 backend 미실행 상태 HTTP 502. `scripts/dev.mjs`로 root `dev`를 교정한 뒤 웹 200, `/api/readyz` `ready` 및 SQLite true, `/healthz` `ok` 확인 | 대기열 매칭 endpoint는 없음. 서버 health/readiness만 확인했으며 온라인 접속·매칭 성공으로 계산하지 않음 |
 
 디자인 선택: 살구색 페이지와 부드러운 그라데이션으로 기획 색을 따르고, 격자선은 축소 화면에서도 선명하도록 별도 선 요소로 그렸다. 후보 돌은 반투명 표식으로 기존 돌과 구분하고 좌표/확정 버튼을 함께 둔다. PC에서는 채팅을 보드 옆, 좁은 화면에서는 보드 다음 문서 흐름에 두어 판과 입력이 겹치지 않게 했다. 주요 액션은 46–48px 이상 높이로 구성했다. 모션 축소 설정에서 승인 돌 연출과 봇 애니메이션을 끈다. 대비 수치는 측정하지 않았다.
+
+## Codex 계정 전환 문서 증거
+
+| ID | 연결 | 실제 자료와 조건 | 결과/한계 |
+|---|---|---|---|
+| E4-01 | 같은 PC·환경의 계정 전환 인수 | `2026-11-12` Codex 셸에서 `Get-Location`, `git status --short --branch`, `git log -5 --oneline --decorate`, `node/npm/pnpm/git --version` 실행 | `C:/오목게임`, `main`, `29686d0`과 `origin/main` 동기화, Node 24.22.1, npm 명령 PATH 미발견, pnpm 11.25.0, Git 2.54.0 확인. 새 계정이 같은 런타임·인증을 쓰는지는 전환 후 재확인 필요. 기록 절차: [`account-switch-handoff.md`](account-switch-handoff.md) |
 
 ## 2단계 실제 증거 — A04/A05 규칙 부분
 

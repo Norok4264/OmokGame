@@ -1,12 +1,13 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { PROTOCOL_VERSION, parseClientJson, type ClientMessage, type RequestId, type UtcInstant } from "@danpan/shared";
-import { WebSocket, WebSocketServer, type RawData } from "ws";
+import { WebSocketServer } from "ws";
 import type { SqliteDatabase } from "./storage/database.js";
 import { isDatabaseReady } from "./storage/database.js";
+import { LobbyCoordinator, type LobbyTiming } from "./lobby.js";
 
 export interface ApplicationServer {
   httpServer: Server;
   webSocketServer: WebSocketServer;
+  lobby: LobbyCoordinator;
 }
 
 function respondJson(response: ServerResponse, status: number, body: unknown): void {
@@ -37,61 +38,7 @@ function handleHttpRequest(request: IncomingMessage, response: ServerResponse, d
   respondJson(response, 404, { error: { code: "NOT_FOUND", message: "Route not found" } });
 }
 
-function sendError(socket: WebSocket, requestId: RequestId | null, code: string, message: string): void {
-  if (socket.readyState !== WebSocket.OPEN) return;
-  socket.send(JSON.stringify({
-    protocolVersion: PROTOCOL_VERSION,
-    type: "server.error",
-    requestId,
-    ok: false,
-    code,
-    message,
-    snapshot: null,
-  }));
-}
-
-function sendCommandResult(socket: WebSocket, requestId: RequestId, data: Record<string, unknown>): void {
-  socket.send(JSON.stringify({
-    protocolVersion: PROTOCOL_VERSION,
-    type: "command.result",
-    requestId,
-    ok: true,
-    data,
-  }));
-}
-
-function rawDataToBuffer(data: RawData): Buffer {
-  if (Array.isArray(data)) return Buffer.concat(data);
-  if (Buffer.isBuffer(data)) return data;
-  return Buffer.from(data);
-}
-
-function handleClientMessage(socket: WebSocket, raw: Buffer): void {
-  const parsed = parseClientJson(raw.toString("utf8"));
-  if (!parsed.ok) {
-    sendError(socket, null, parsed.error.code, parsed.error.message);
-    return;
-  }
-
-  const message: ClientMessage = parsed.value;
-  if (message.type === "client.hello") {
-    sendCommandResult(socket, message.requestId, { accepted: true, protocolVersion: PROTOCOL_VERSION });
-    return;
-  }
-  if (message.type === "heartbeat") {
-    socket.send(JSON.stringify({
-      protocolVersion: PROTOCOL_VERSION,
-      type: "heartbeat.ack",
-      requestId: message.requestId,
-      serverTimeUtc: new Date().toISOString() as UtcInstant,
-    }));
-    return;
-  }
-
-  sendError(socket, message.requestId, "NOT_IMPLEMENTED", "Application commands are added in later stages");
-}
-
-export function createApplicationServer(db: SqliteDatabase): ApplicationServer {
+export function createApplicationServer(db: SqliteDatabase, timing?: LobbyTiming): ApplicationServer {
   const httpServer = createServer((request, response) => handleHttpRequest(request, response, db));
   const webSocketServer = new WebSocketServer({ noServer: true, maxPayload: 8 * 1024, perMessageDeflate: false });
 
@@ -106,15 +53,7 @@ export function createApplicationServer(db: SqliteDatabase): ApplicationServer {
     });
   });
 
-  webSocketServer.on("connection", (socket) => {
-    socket.send(JSON.stringify({
-      protocolVersion: PROTOCOL_VERSION,
-      type: "server.hello",
-      serverBuild: "0.1.0",
-      serverTimeUtc: new Date().toISOString() as UtcInstant,
-    }));
-    socket.on("message", (data) => handleClientMessage(socket, rawDataToBuffer(data)));
-  });
+  const lobby = new LobbyCoordinator(db, webSocketServer, timing);
 
-  return { httpServer, webSocketServer };
+  return { httpServer, webSocketServer, lobby };
 }
