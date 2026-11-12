@@ -1,14 +1,14 @@
 # 개발 인수인계
 
-기록 시점: 2026-11-11 (Asia/Seoul)  
-현재 단계: 1단계 기본 구조 완료  
+기록 시점: 2026-11-12 (Asia/Seoul)  
+현재 단계: 2단계 공유 규칙 엔진 완료  
 앱 버전: `0.1.0` (개발 뼈대; 완성 앱 버전 아님)
 
 ## 완료 범위
 
 신규 PWA 프로젝트를 기존 위치에 구성했다. npm workspaces는 `apps/web`, `apps/server`, `packages/shared`를 포함하며 문서는 `docs/`에 있다. React·TypeScript·Vite 웹, Node.js HTTP/`ws` 서버, 공통 계약 패키지와 SQLite migration/repository가 있다. 정확한 직접 의존성 버전과 npm lockfile v3을 기록했다. 현재 경로는 Git 작업 트리지만 아직 커밋은 없고 생성 파일은 모두 untracked 상태다.
 
-사용자 확정 기능을 완료한 단계는 아니다. UI는 개발 시작 화면이며 실시간 구현은 `client.hello`, heartbeat와 기본 경계 검사까지다. 인증, 온라인 대국 흐름, 로비, 15×15 규칙 엔진, 상대 선택, 채팅, 봇, 결과/PNG, 실기기 오프라인은 후속 단계다. A01–A12/B01–B12는 전부 `미검증`이다.
+전체 사용자 기능은 아직 완료되지 않았다. UI는 개발 시작 화면이며 실시간 구현은 `client.hello`, heartbeat와 기본 경계 검사까지다. 인증, 온라인 대국 흐름, 로비·상대 선택, 미리보기/확정 연결, 채팅, 봇, 결과/PNG, 실기기 오프라인은 후속 단계다. A04 규칙 부분과 A05 좌표·착수 검증 부분은 로컬 테스트로 통과했고, 그 외 및 온라인 연동 범위는 미검증이다.
 
 ## 생성·수정 파일
 
@@ -16,6 +16,7 @@
 - `apps/web`: Vite 설정, manifest/icon, HTML, React 화면, package/TypeScript 설정
 - `apps/server`: HTTP·WebSocket 진입점, 설정, health/readiness, SQLite DB/migration/repository, 테스트, package/TypeScript 설정
 - `packages/shared`: 상태·ID·프로토콜 버전 타입, 양방향 메시지 계약과 런타임 parser, 테스트
+- `packages/shared/src/rules.ts`, `rules.test.ts`: 순수 15×15 규칙 엔진과 의미 있는 규칙 테스트
 - `scripts/check-server.mjs`
 - `docs/environment.md`, `requirements.md`, `protocol.md`, `acceptance.md`, `handoff.md`, `evidence-index.md`
 
@@ -39,6 +40,10 @@ Codex 원격 작업 셸에서 확인한 값: Windows 10.0.22631, PowerShell 7.6.
 | `pnpm dlx npm@12.2.2 install-scripts approve better-sqlite3 esbuild` | 현재 버전 `better-sqlite3@13.0.3`, `esbuild@0.28.2`만 `allowScripts`에 등록 |
 | `pnpm dlx npm@12.2.2 rebuild better-sqlite3 esbuild` | `rebuilt dependencies successfully` |
 | `pnpm dlx npm@12.2.2 test` (rebuild 후) | 3 test files, 8 tests passed |
+| `pnpm dlx npm@12.2.2 test` (규칙 모듈 추가 후) | 4 test files, 25 tests passed |
+| `pnpm dlx npm@12.2.2 run typecheck` (규칙 모듈 추가 후) | 종료 코드 0 |
+| `pnpm dlx npm@12.2.2 exec -- tsc -p packages/shared/tsconfig.json` | 규칙 테스트 포함 shared 전체 TypeScript 검사, 종료 코드 0 |
+| `pnpm dlx npm@12.2.2 run build` (규칙 모듈 추가 후) | 종료 코드 0; shared/server TypeScript 및 Vite 웹 빌드 성공 |
 | `pnpm dlx npm@12.2.2 run check` | 실패: `check` 스크립트 없음. 서버용 스크립트 이름은 `check:server`; HTTP 응답은 개발 서버에 직접 요청해 확인 |
 | `pnpm dlx npm@12.2.2 run dev` | 웹 `127.0.0.1:5173`, 서버 `127.0.0.1:3001` 시작 |
 | GET `/` | HTTP 200, title `단판 오목` |
@@ -57,7 +62,7 @@ Codex 원격 작업 셸에서 확인한 값: Windows 10.0.22631, PowerShell 7.6.
 ## 다음 단계
 
 1. 사용자의 실제 PC에서 environment.md의 명령을 실행해 Node/npm/Git 및 브라우저를 확인하고 설치 경로를 판단한다.
-2. 규칙 엔진과 board win detection부터 구현하고 A04·A05 단위 검증을 시작한다.
+2. 이미 구현한 규칙 API를 웹 후보 미리보기와 서버의 권위 판정에 연결해 A04/A05 통합 경계를 검증한다.
 3. UI와 로비·상대 선택, challenge lifecycle, 인증/참가 권한을 순차 연결한다.
 4. 상태 영속 경로를 challenge/game creation, move, end의 검증 → SQLite 원자 저장 → commit → 메모리 공개 순서로 연결한다.
 5. 복구·시간 제한·재도전·채팅·PNG·오프라인 PWA·봇·통신 보기를 완성하고 A01–A12/B01–B12 실제 증거를 수집한다.

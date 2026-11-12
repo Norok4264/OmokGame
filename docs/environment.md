@@ -61,6 +61,8 @@ git status --short --branch
 
 최종 Git 확인 시점에는 `C:/오목게임`이 Git 작업 트리였고 브랜치는 `main`, 아직 커밋은 없었다. `git ls-files`는 비어 있고 `git ls-files -ci --exclude-standard`도 비어 있었다. 0단계의 저장소 없음 기록은 초기 확인 시점의 결과다.
 
+2026-11-12, 공유 규칙 모듈을 추가한 뒤 전체 테스트 4개 파일/25개 테스트가 통과했고 루트 타입 검사, 공유 패키지 테스트 파일까지 포함한 TypeScript 검사, 빌드도 성공했다. 상세 규칙 사례와 A04/A05 적용 범위는 `docs/acceptance.md`에 기록했다. 이는 Codex 셸의 로컬 테스트이며 온라인/실기기 확인은 아니다.
+
 ## Android 도구
 
 PWA 경로에는 Android Studio·Gradle·JDK·SDK·adb가 빌드 필수 항목이 아니다. APK 경로가 선택되지 않았으므로 설치 버전, Daemon JVM, Wrapper/AGP 호환성 및 Android 기기는 현재 조사 대상이 아니다. 나중에 APK를 요청하면 별도 진단을 먼저 한다.
