@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LobbyClient, reconnectDelay } from "./lobby-client.js";
+import {communicationLog} from "./communication-log.js";
 class FakeSocket {
   static OPEN=1;
   static all: FakeSocket[]=[];
@@ -28,6 +29,7 @@ async function authenticate(socket:FakeSocket, start:Promise<unknown>) {
 }
 describe("browser recovery ordering and stale socket isolation",()=>{
   beforeEach(()=>{
+    communicationLog.clear();
     vi.useFakeTimers(); FakeSocket.all=[];
     vi.stubGlobal("WebSocket",FakeSocket);
     vi.stubGlobal("window",{location:{protocol:"http:",host:"localhost"},setTimeout,clearTimeout,setInterval,clearInterval});
@@ -91,5 +93,18 @@ describe("browser recovery ordering and stale socket isolation",()=>{
     socket.message({type:"server.error",ok:false,requestId:"stable-request",code:"CHAT_RATE_LIMIT",message:"전송 실패",snapshot:null});await failed;
     const second=client.request("chat.send",body,"stable-request");socket.message({type:"command.result",requestId:"stable-request",data:{messageId:"stable-message",sequence:1}});await second;
     const sent=socket.sent.filter(m=>m.type==="chat.send");expect(sent).toHaveLength(2);expect(sent[0]).toEqual(sent[1]);client.stop();
+  });
+  it("records actual transport strings for authentication, moves, replies and Korean chat without secrets",async()=>{
+    const client=new LobbyClient();const start=client.start("Alice");const socket=FakeSocket.all[0]!;await(await authenticate(socket,start)).finish();
+    const move=client.request("game.move.propose",{gameId:"long-game-id",expectedRevision:3,x:7,y:8},"move-request");
+    socket.message({type:"command.result",requestId:"move-request",data:{approvedRevision:4}});await move;
+    const chat=client.request("chat.send",{gameId:"long-game-id",messageId:"chat-message",body:"한글 본문"},"chat-request");
+    socket.message({type:"command.result",requestId:"chat-request",data:{messageId:"chat-message",sequence:1}});await chat;
+    const records=communicationLog.snapshot(),sent=records.find(e=>e.direction==="SEND"&&e.kind==="game.move.propose")!;
+    expect(sent.coordinate).toMatchObject({x:7,y:8,label:"H9"});expect(sent.expectedRevision).toBe(3);
+    expect(sent.payloadBytes).toBe(new TextEncoder().encode(JSON.stringify(socket.sent.find(m=>m.type==="game.move.propose"))).byteLength);
+    expect(records.find(e=>e.direction==="SEND"&&e.kind==="chat.send")?.summary.chatLength).toBe(5);
+    expect(records.some(e=>e.direction==="RECEIVE"&&e.applicationRttMs!==undefined)).toBe(true);
+    expect(JSON.stringify(records)).not.toContain("safe-token");expect(JSON.stringify(records)).not.toContain("한글 본문");client.stop();
   });
 });

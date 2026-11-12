@@ -113,3 +113,7 @@ SQLite migration 3은 result_rooms와 rematches를 추가한다. chat 본문은 
 
 혼자 놀기는 서버 프로토콜을 사용하지 않는다. localStorage의 전용 키에서 착수 이력을 shared 규칙으로 재실행한다. Worker move/warmup 작업에는 gameId/revision/taskId를 쓰며 실제 대국 응답은 현재 작업과 모두 일치해야 적용한다. 대국 시간제한/채팅/외부 AI 호출은 없다.
 서비스 워커는 빌드 SHA 목록의 공개 정적 자원만 다룬다. 세션/인증/API/WS/실시간 상태는 precache 대상이 아니다. 업데이트는 모든 클라이언트의 idle 응답을 확인하고 적용하며 무응답/진행 중 판은 거부한다. 보관·업데이트·93개 테스트·11단계 Android HTTPS gate는 stage8-solo-offline.md 참조.
+
+## 9단계 관측 경계
+
+프로토콜 변경 없이 LobbyClient의 실제 JSON send/message를 계측한다. 통신 보기에는 원본 문자열 UTF-8 바이트 수와 허용된 안전 필드만 남긴다. 토큰/이름/채팅 본문은 제외, ID는 앞 8자, 채팅은 길이/sequence, 최근 200건 메모리만 유지한다. requestId별 같은 브라우저 performance.now 차이를 응용 왕복시간으로 표시하며 broadcast/상관관계가 없거나 같은 ID 중첩 응답은 숫자를 만들지 않는다. WS/TLS/TCP 헤더·재전송 포함 크기가 아니다. [보고서 구조/수집 절차](report-network-collection.md), [실제 확인](stage9-communication.md) 참조.

@@ -1,4 +1,5 @@
 import { SoloGame } from "./SoloGame.js";
+import { CommunicationView } from "./CommunicationView.js";
 import { PwaStatus } from "./PwaStatus.js";
 import { loadSolo } from "./solo-state.js";
 import { updateLocked } from "./pwa.js";
@@ -539,6 +540,7 @@ export function App() {
 
   return (
     <main className="app-shell">
+      <CommunicationView/>
       <div className="ambient ambient-one" aria-hidden="true" />
       <div className="ambient ambient-two" aria-hidden="true" />
 

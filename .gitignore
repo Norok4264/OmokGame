@@ -71,3 +71,6 @@ local.properties
 *.pfx
 signing.properties
 key.properties
+
+# Optional raw packet captures and TLS key logs may contain session secrets.
+private-captures/

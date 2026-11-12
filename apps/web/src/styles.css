@@ -403,3 +403,12 @@ kbd { padding: 2px 5px; border: 1px solid rgba(101,75,55,.22); border-radius: 5p
 .solo-board { display: grid; grid-template-columns: repeat(15,1fr); width: min(100%,650px); aspect-ratio: 1; margin: auto; padding: 8px; background: #dba968; border: 8px solid #bf8a50; border-radius: 8px; }
 .solo-point { min-width: 0; aspect-ratio: 1; border: 0; padding: 0; display: grid; place-items: center; background: linear-gradient(90deg,transparent calc(50% - .5px),#8b613e calc(50% - .5px),#8b613e calc(50% + .5px),transparent calc(50% + .5px)),linear-gradient(transparent calc(50% - .5px),#8b613e calc(50% - .5px),#8b613e calc(50% + .5px),transparent calc(50% + .5px)); }
 .solo-game .result-dialog { padding: 24px; }
+
+.communication-view { margin: 12px auto; max-width: 1000px; padding: 12px; border: 1px solid #bb967c; border-radius: 12px; background: #fff9f3; color: #382b22; }
+.communication-view summary { cursor: pointer; min-height: 32px; font-weight: 700; }
+.communication-view p { line-height: 1.6; }
+.communication-view table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.communication-view td, .communication-view th { padding: 8px; border: 1px solid #d4b69f; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.communication-events { max-height: 380px; overflow: auto; }
+.communication-events table { min-width: 850px; }
+.communication-events code { white-space: pre-wrap; font-size: .75rem; }

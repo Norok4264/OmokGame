@@ -63,3 +63,7 @@ Codex 계정을 바꾸고 같은 PC 작업 폴더에서 이어갈 때는 `docs/a
 7단계 상세 구현·80개 테스트·브라우저 검증 제한: [docs/stage7-results-chat-png.md](docs/stage7-results-chat-png.md).
 
 최종 PWA 확인은 npm run build 후 npm run preview:web로 실행합니다. 오프라인 준비 완료를 확인한 후 네트워크 차단/재실행하세요. 최신 구현·실제 캡처·93개 테스트·Android gate: [docs/stage8-solo-offline.md](docs/stage8-solo-offline.md).
+
+## 통신 보기와 보고서 자료
+
+각 화면의 ‘통신 보기’를 펼치면 현재 브라우저의 실제 WebSocket 송수신을 확인할 수 있습니다. 최근 200건만 메모리에 유지하며 토큰·닉네임·채팅 본문을 제외합니다. 바이트는 원본 JSON UTF-8 크기, 왕복시간은 같은 기기의 응용 요청/응답 시간입니다. [현재 구조도·착수 흐름도·보고서 Ⅱ·Ⅲ 수집 절차](docs/report-network-collection.md), [9단계 실제 결과와 한계](docs/stage9-communication.md)를 참고하세요. 실제 Wireshark 패킷 및 WSS 배포 검증은 아직 없습니다.

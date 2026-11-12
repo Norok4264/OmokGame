@@ -1,7 +1,9 @@
 # 증거 색인
 
 기록 시점: 2026-11-12 (Asia/Seoul)  
-앱 버전: 0.1.0 / 0.1.0-a8604a3cbbe94a98 — 8단계. 최신 E9 원시 JSON·실제 캡처는 stage8-solo-offline.md
+앱 버전: 0.1.0 / 0.1.0-9aa3175978d99527 — 9단계. 최신 실제 앱 관측은 E10; E9는 8단계 당시 빌드 증거.
+
+이전 단계의 미수집/미구현 문장은 당시 상태이며 최신 표를 우선한다. 과거 로컬 WSS 표기는 TLS 검증 증거가 아니다. 이번 시험은 HTTP/WS이다.
 
 ## 4단계 실제 WebSocket 증거
 
@@ -86,3 +88,27 @@
 
 ## 8단계 혼자 놀기·오프라인 (최신)
 앱 0.1.0 / 빌드 0.1.0-a8604a3cbbe94a98. 19개 파일/93개 테스트 및 타입·빌드 성공. Chrome·Edge 격리 headless 최종 빌드에서 준비→offline→완전 종료/재실행→복구→9수 봇 승리, 백/흑/종료 복구·새 ID·저장 삭제를 실제 확인했다. 2창 업데이트 보류/홈 적용도 통과. E9-01~E9-06, 캡처/JSON은 [stage8-solo-offline.md](stage8-solo-offline.md). Android 신뢰 HTTPS 실기는 미검증이며 11단계에서 반드시 다시 확인해야 한다.
+
+## 9단계 실제 관측 E10 (패킷 캡처 아님)
+
+| ID | 실제 자료 | 결과와 범위 |
+|---|---|---|
+| E10-01 | [안전한 앱 이벤트 JSON](evidence/stage9-application-events.json) | Chrome 157.0.8103.51 격리 두 세션 + Node/SQLite :memory:, 최종 빌드 0.1.0-9aa3175978d99527. UTC는 파일 내 실제 기록. A 28/B 20건, 착수 180 UTF-8 bytes 일치, H8/revision 2 양쪽 일치, 채팅 길이 13, 민감 필드 제외·삭제 통과. 응용 RTT 표본이며 TCP 성능 수치 아님 |
+| E10-02 | [A 실제 통신 보기](evidence/stage9-communication-a.png), [B 실제 통신 보기](evidence/stage9-communication-b.png) | 실제 렌더한 통신 보기 영역만 캡처. 채팅 본문 영역 제외. localhost 데스크톱 headless 시험이며 Android 화면 아님 |
+| E10-03 | communication-log.test.ts, lobby-client.test.ts, 전체 vitest run | 20개 파일/99개 테스트 통과. UTF-8 원본 크기/200건/삭제/단조 시계/중첩 ID·연결 교체/정보 제외를 자동 시험. 실제 명령은 [9단계 기록](stage9-communication.md) |
+
+## 9단계 소스 기반 개념 설명 C10
+
+| ID | 설명 자료 | 구분 |
+|---|---|---|
+| C10-01 | [보고서 Ⅱ-1·Ⅱ-2 구조도/착수 흐름도](report-network-collection.md) | 현재 소스의 브라우저→Vite→Node→shared/SQLite 구조와 commit 후 전달을 설명. 실제 배포망/경로 캡처 아님 |
+| C10-02 | 같은 문서 Ⅱ-3·Ⅱ-4, 앱 OSI 역할 표 | JSON/UTF-8·TLS 관련 역할·대화 관리·TCP/포트·IP/라우팅·프레임/MAC·매체 설명. gameId는 대국 ID. 앱이 OSI 전 계층을 별도 구현했다는 뜻 아님 |
+
+## 9단계 미수집 안내 P10
+
+| ID | 수집 예정 자료 | 현재 상태 |
+|---|---|---|
+| P10-01 | [Ⅲ Wireshark 수집 절차](report-network-collection.md) | 인터페이스 확인, loopback/NIC 위치, 필터, 착수/채팅 시연, WSS 암호화 한계 안내만 작성. 실제 pcap/pcapng·패킷 수/길이·stream·NIC/IP/MAC 관측 없음 |
+| P10-02 | 실제 WSS·Android/서로 다른 기기 시험 | 미실행. 11단계 신뢰 HTTPS Android 오프라인 gate 유지. 실제 확보 후 앱 버전·시간·환경과 함께 별도 등록 |
+
+원본 캡처에는 인증 토큰/본문/주소가 포함될 수 있다. private-captures/는 Git 제외이며 현재 추적 파일은 없다. E10 JSON 크기는 실제 응용 페이로드이며 TCP 패킷 전체 크기가 아니다. 학번·성명은 미제공 상태로 유지한다.

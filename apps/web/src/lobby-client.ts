@@ -1,5 +1,6 @@
 import type { RuleGameState, ResultRoomState, RoomChatMessage } from "@danpan/shared";
 import { parseServerJson, PROTOCOL_VERSION } from "@danpan/shared";
+import { communicationLog } from "./communication-log.js";
 
 export type LobbyState = {
   me: { playerId: string; nickname: string; state: string };
@@ -27,6 +28,12 @@ export function loadSavedSession(): SavedSession | null {
 export function clearSavedSession(): void { sessionStorage.removeItem(STORAGE_KEY); }
 
 export class LobbyClient {
+  private readonly traceChannels=new WeakMap<WebSocket,string>();
+  private transmit(socket:WebSocket,message:Record<string,unknown>):void {
+    const raw=JSON.stringify(message),started=performance.now();
+    socket.send(raw);
+    communicationLog.record("SEND",raw,this.traceChannels.get(socket)??"untracked",started);
+  }
   private socket: WebSocket | null = null;
   private generation = 0;
   private reconnectEpoch = 0;
@@ -66,7 +73,7 @@ export class LobbyClient {
         reject(new Error("서버 응답 시간이 초과되었습니다. 연결을 확인하고 다시 시도하세요."));
       }, 8_000);
       this.commands.set(requestId, { resolve, reject, timer });
-      socket.send(JSON.stringify({ protocolVersion: PROTOCOL_VERSION, type, requestId, ...body }));
+      this.transmit(socket,{ protocolVersion: PROTOCOL_VERSION, type, requestId, ...body });
     });
   }
 
@@ -83,6 +90,7 @@ export class LobbyClient {
       this.commands.delete(id);
     }
     const socket = this.socket;
+    if(socket)this.traceChannels.get(socket)&&communicationLog.endChannel(this.traceChannels.get(socket)!);
     this.socket = null;
     socket?.close(1000, "User ended session");
     this.onStatus("ended");
@@ -93,6 +101,7 @@ export class LobbyClient {
     const startedAt = Date.now();
     const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
     const socket = new WebSocket(`${scheme}//${window.location.host}/ws`);
+    this.traceChannels.set(socket,crypto.randomUUID());
     this.socket = socket;
     await new Promise<void>((resolve, reject) => {
       let settled = false;
@@ -105,6 +114,7 @@ export class LobbyClient {
       socket.addEventListener("open", () => {
         socket.addEventListener("message", (event) => {
           if (this.socket !== socket || this.generation !== generation || this.stopped) return;
+          if(typeof event.data==="string")communicationLog.record("RECEIVE",event.data,this.traceChannels.get(socket)!);
           const message = this.parse(event.data);
           if (!message || message.protocolVersion !== PROTOCOL_VERSION) return;
           this.lastReceived = performance.now();
@@ -123,9 +133,9 @@ export class LobbyClient {
     });
     if (Date.now() - startedAt >= timeoutMs) throw new Error("연결 확인 시간이 초과되었습니다.");
     const requestId: string = crypto.randomUUID();
-    socket.send(JSON.stringify(saved
+    this.transmit(socket,saved
       ? { protocolVersion: PROTOCOL_VERSION, type: "session.resume", requestId, token: saved.token }
-      : { protocolVersion: PROTOCOL_VERSION, type: "session.start", requestId, nickname }));
+      : { protocolVersion: PROTOCOL_VERSION, type: "session.start", requestId, nickname });
     const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
       const timer = window.setTimeout(() => {
         this.listeners.delete(onMessage);
@@ -193,9 +203,10 @@ export class LobbyClient {
   private sendHeartbeat(): void {
     if (this.socket?.readyState !== WebSocket.OPEN) return;
     this.lastSent = performance.now();
-    this.socket.send(JSON.stringify({ protocolVersion: PROTOCOL_VERSION, type: "heartbeat", requestId: crypto.randomUUID(), sentAtUtc: new Date().toISOString() }));
+    this.transmit(this.socket,{ protocolVersion: PROTOCOL_VERSION, type: "heartbeat", requestId: crypto.randomUUID(), sentAtUtc: new Date().toISOString() });
   }
   private onSocketClose(socket: WebSocket): void {
+    const channel=this.traceChannels.get(socket);if(channel)communicationLog.endChannel(channel);
     if (this.socket !== socket) return;
     this.socket = null;
     this.generation++;

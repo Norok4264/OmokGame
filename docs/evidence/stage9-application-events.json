@@ -1,0 +1,657 @@
+{
+  "appVersion": "0.1.0",
+  "origin": "http://127.0.0.1:4173",
+  "kind": "sanitized application events; not packet capture",
+  "completed": true,
+  "browser": "157.0.8103.51",
+  "build": "0.1.0-9aa3175978d99527",
+  "eventsA": [
+    {
+      "atUtc": "2026-11-12T04:43:06.249Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 179,
+      "applicationRtt": "5.10 ms",
+      "summary": {
+        "requestId": "3eff8a33…",
+        "messageId": "21a3b7e0…",
+        "protocolVersion": 1,
+        "ok": true,
+        "sequence": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:06.247Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "H8 (7,7) · snapshot 마지막 수",
+      "revision": "현재 2",
+      "payloadBytes": 2171,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "ACTIVE",
+        "chatMessagesCount": 1,
+        "latestChat": {
+          "messageId": "21a3b7e0…",
+          "sequence": 1,
+          "length": 13
+        }
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:06.243Z",
+      "kindAndDirection": "chat.send브라우저 → 서버",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 233,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "3eff8a33…",
+        "gameId": "84c6dd66…",
+        "messageId": "21a3b7e0…",
+        "protocolVersion": 1,
+        "chatLength": 13
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:06.169Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 131,
+      "applicationRtt": "2.70 ms",
+      "summary": {
+        "requestId": "95b1c5aa…",
+        "protocolVersion": 1,
+        "ok": true
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:06.167Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "H8 (7,7) · snapshot 마지막 수",
+      "revision": "현재 2",
+      "payloadBytes": 1942,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "ACTIVE",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:06.166Z",
+      "kindAndDirection": "lobby.snapshot.request브라우저 → 서버",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 104,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "95b1c5aa…",
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:06.166Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "H8 (7,7) · snapshot 마지막 수",
+      "revision": "승인 2 / 현재 2",
+      "payloadBytes": 1565,
+      "applicationRtt": "12.50 ms",
+      "summary": {
+        "requestId": "dc0ed719…",
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "ok": true,
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:06.164Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "H8 (7,7) · snapshot 마지막 수",
+      "revision": "현재 2",
+      "payloadBytes": 1942,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "ACTIVE",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:06.153Z",
+      "kindAndDirection": "game.move.propose브라우저 → 서버",
+      "coordinate": "H8 (7,7) · 요청",
+      "revision": "예상 1",
+      "payloadBytes": 180,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "dc0ed719…",
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:05.986Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 1",
+      "payloadBytes": 1930,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "ACTIVE",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:05.984Z",
+      "kindAndDirection": "game.event서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 1",
+      "payloadBytes": 172,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.741Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 0",
+      "payloadBytes": 1937,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "PREPARING",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.723Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 0",
+      "payloadBytes": 1916,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "PREPARING",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.722Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 176,
+      "applicationRtt": "11.10 ms",
+      "summary": {
+        "requestId": "8939f8ef…",
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "ok": true
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.711Z",
+      "kindAndDirection": "game.ready브라우저 → 서버",
+      "coordinate": "—",
+      "revision": "현재 0",
+      "payloadBytes": 153,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "8939f8ef…",
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.484Z",
+      "kindAndDirection": "game.event서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 0",
+      "payloadBytes": 256,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "PREPARING"
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.483Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 0",
+      "payloadBytes": 1917,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "PREPARING",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.482Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 236,
+      "applicationRtt": "10.20 ms",
+      "summary": {
+        "requestId": "e0b77ec7…",
+        "gameId": "84c6dd66…",
+        "challengeId": "eaed80aa…",
+        "protocolVersion": 1,
+        "ok": true,
+        "status": "ACCEPTED"
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.472Z",
+      "kindAndDirection": "challenge.respond브라우저 → 서버",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 166,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "e0b77ec7…",
+        "challengeId": "eaed80aa…",
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.447Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 664,
+      "applicationRtt": "—",
+      "summary": {
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.331Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 416,
+      "applicationRtt": "—",
+      "summary": {
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.119Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 131,
+      "applicationRtt": "12.50 ms",
+      "summary": {
+        "requestId": "71b8444a…",
+        "protocolVersion": 1,
+        "ok": true
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.118Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 326,
+      "applicationRtt": "—",
+      "summary": {
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.107Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 326,
+      "applicationRtt": "—",
+      "summary": {
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.106Z",
+      "kindAndDirection": "lobby.snapshot.request브라우저 → 서버",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 104,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "71b8444a…",
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.105Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 267,
+      "applicationRtt": "4.20 ms",
+      "summary": {
+        "requestId": "79e3cf27…",
+        "playerId": "78f8f31f…",
+        "protocolVersion": 1,
+        "ok": true
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.101Z",
+      "kindAndDirection": "session.start브라우저 → 서버",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 115,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "79e3cf27…",
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.100Z",
+      "kindAndDirection": "server.hello서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 108,
+      "applicationRtt": "—",
+      "summary": {
+        "protocolVersion": 1
+      }
+    }
+  ],
+  "eventsB": [
+    {
+      "atUtc": "2026-11-12T04:43:06.246Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "H8 (7,7) · snapshot 마지막 수",
+      "revision": "현재 2",
+      "payloadBytes": 2171,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "ACTIVE",
+        "chatMessagesCount": 1,
+        "latestChat": {
+          "messageId": "21a3b7e0…",
+          "sequence": 1,
+          "length": 13
+        }
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:06.158Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "H8 (7,7) · snapshot 마지막 수",
+      "revision": "현재 2",
+      "payloadBytes": 1942,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "ACTIVE",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:05.988Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 1",
+      "payloadBytes": 1930,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "ACTIVE",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:05.984Z",
+      "kindAndDirection": "game.event서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 1",
+      "payloadBytes": 172,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.750Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 0",
+      "payloadBytes": 1937,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "PREPARING",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.750Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 176,
+      "applicationRtt": "10.60 ms",
+      "summary": {
+        "requestId": "7eb0e98c…",
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "ok": true
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.739Z",
+      "kindAndDirection": "game.ready브라우저 → 서버",
+      "coordinate": "—",
+      "revision": "현재 0",
+      "payloadBytes": 153,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "7eb0e98c…",
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.714Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 0",
+      "payloadBytes": 1916,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "PREPARING",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.479Z",
+      "kindAndDirection": "game.event서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 0",
+      "payloadBytes": 256,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "PREPARING"
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.476Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "현재 0",
+      "payloadBytes": 1917,
+      "applicationRtt": "—",
+      "summary": {
+        "gameId": "84c6dd66…",
+        "protocolVersion": 1,
+        "status": "PREPARING",
+        "chatMessagesCount": 0
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.457Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 664,
+      "applicationRtt": "—",
+      "summary": {
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.456Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 230,
+      "applicationRtt": "10.90 ms",
+      "summary": {
+        "requestId": "ea8577b2…",
+        "challengeId": "eaed80aa…",
+        "protocolVersion": 1,
+        "ok": true,
+        "status": "PENDING"
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.445Z",
+      "kindAndDirection": "challenge.create브라우저 → 서버",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 154,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "ea8577b2…",
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.342Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 131,
+      "applicationRtt": "3.90 ms",
+      "summary": {
+        "requestId": "be2109e6…",
+        "protocolVersion": 1,
+        "ok": true
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.341Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 416,
+      "applicationRtt": "—",
+      "summary": {
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.340Z",
+      "kindAndDirection": "lobby.snapshot서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 416,
+      "applicationRtt": "—",
+      "summary": {
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.338Z",
+      "kindAndDirection": "lobby.snapshot.request브라우저 → 서버",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 104,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "be2109e6…",
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.337Z",
+      "kindAndDirection": "command.result서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 267,
+      "applicationRtt": "8.60 ms",
+      "summary": {
+        "requestId": "1f15ac6b…",
+        "playerId": "2e9d58d6…",
+        "protocolVersion": 1,
+        "ok": true
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.328Z",
+      "kindAndDirection": "session.start브라우저 → 서버",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 115,
+      "applicationRtt": "—",
+      "summary": {
+        "requestId": "1f15ac6b…",
+        "protocolVersion": 1
+      }
+    },
+    {
+      "atUtc": "2026-11-12T04:43:02.326Z",
+      "kindAndDirection": "server.hello서버 → 브라우저",
+      "coordinate": "—",
+      "revision": "—",
+      "payloadBytes": 108,
+      "applicationRtt": "—",
+      "summary": {
+        "protocolVersion": 1
+      }
+    }
+  ],
+  "originalMovePayloadBytes": 180,
+  "redactionPassed": true,
+  "samePayloadByteCountPassed": true,
+  "bothBoardsMatch": true,
+  "chatLength": 13,
+  "clearPassed": true,
+  "finishedAt": "2026-11-12T04:43:06.829Z"
+}
