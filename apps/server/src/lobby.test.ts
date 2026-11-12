@@ -139,6 +139,29 @@ describe("real WebSocket sessions and challenge lifecycle", () => {
         expect(db.prepare("SELECT status FROM games WHERE game_id=?").get(acceptResult.data.gameId)).toMatchObject({ status: "ACTIVE" });
         const activeSnapshot = await applicant.waitFor((message) => message.type === "lobby.snapshot" && message.snapshot?.game?.status === "ACTIVE");
         expect(activeSnapshot.snapshot.game.color).toBe("WHITE");
+        const revision = activeSnapshot.snapshot.game.revision;
+        applicant.send("game.move.propose", "wrong-turn", { gameId: acceptResult.data.gameId, expectedRevision: revision, x: 0, y: 0 });
+        expect(await applicant.command("wrong-turn")).toMatchObject({ type: "server.error", code: "WRONG_TURN" });
+        const move = { gameId: acceptResult.data.gameId, expectedRevision: revision, x: 7, y: 7 };
+        recipient.send("game.move.propose", "approved-move", move);
+        await recipient.command("approved-move"); // simulate an application losing the first approval
+        recipient.send("game.move.propose", "approved-move", move);
+        expect(await recipient.command("approved-move")).toMatchObject({ data: { replayed: true, approvedRevision: revision + 1 } });
+        const matching = (m: Message) => m.type === "lobby.snapshot" && m.snapshot?.game?.revision === revision + 1;
+        const [whiteBoard, blackBoard] = await Promise.all([applicant.waitFor(matching), recipient.waitFor(matching)]);
+        expect(whiteBoard.snapshot.game.board).toEqual(blackBoard.snapshot.game.board);
+        expect(whiteBoard.snapshot.game.board[7][7]).toBe("BLACK");
+        db.exec("CREATE TRIGGER fail_online_result BEFORE INSERT ON successful_requests BEGIN SELECT RAISE(ABORT, 'injected online storage failure'); END;");
+        applicant.send("game.resign", "resign-online", { gameId: acceptResult.data.gameId, expectedRevision: revision + 1 });
+        expect(await applicant.command("resign-online")).toMatchObject({ type: "server.error" });
+        expect(db.prepare("SELECT status,revision FROM games WHERE game_id=?").get(acceptResult.data.gameId)).toEqual({ status: "ACTIVE", revision: revision + 1 });
+        db.exec("DROP TRIGGER fail_online_result");
+        applicant.send("game.resign", "resign-online", { gameId: acceptResult.data.gameId, expectedRevision: revision + 1 });
+        expect(await applicant.command("resign-online")).toMatchObject({ data: { snapshot: { result: { winner: "BLACK" }, endReason: "RESIGNATION" } } });
+        const finished = (m: Message) => m.type === "lobby.snapshot" && m.snapshot?.game?.status === "FINISHED";
+        const [whiteResult, blackResult] = await Promise.all([applicant.waitFor(finished), recipient.waitFor(finished)]);
+        expect(whiteResult.snapshot.game.revision).toBe(blackResult.snapshot.game.revision);
+        expect(whiteResult.snapshot.game.result).toEqual(blackResult.snapshot.game.result);
       } else {
         expect(gameCount).toBe(0);
         applicant.send("challenge.create", "cooldown-retry", { targetPlayerId: recipientId });

@@ -27,12 +27,13 @@ export type ClientMessage =
   | (ClientEnvelope & { type: "challenge.create"; targetPlayerId: PlayerId })
   | (ClientEnvelope & { type: "challenge.respond"; challengeId: ChallengeId; accept: boolean })
   | (ClientEnvelope & { type: "challenge.cancel"; challengeId: ChallengeId })
+  | (ClientEnvelope & { type: "game.resign" | "game.snapshot.request"; gameId: GameId; expectedRevision?: GameRevision })
   | (ClientEnvelope & { type: "game.cancel"; gameId: GameId })
   | (ClientEnvelope & { type: "game.ready"; gameId: GameId; revision: GameRevision })
   | (ClientEnvelope & {
       type: "game.move.propose";
       gameId: GameId;
-      revision: GameRevision;
+      expectedRevision: GameRevision;
       x: number;
       y: number;
     })
@@ -192,6 +193,10 @@ export function parseClientMessage(input: unknown): ParseResult<ClientMessage> {
     case "challenge.cancel":
       if (!text(value.challengeId, 128)) return bad("challengeId");
       break;
+    case "game.resign":
+      if (!text(value.gameId, 128) || !integer(value.expectedRevision)) return bad("gameId/expectedRevision");
+      break;
+    case "game.snapshot.request":
     case "game.cancel":
       if (!text(value.gameId, 128)) return bad("gameId");
       break;
@@ -202,7 +207,7 @@ export function parseClientMessage(input: unknown): ParseResult<ClientMessage> {
     case "game.move.propose":
       if (
         !text(value.gameId, 128) ||
-        !integer(value.revision) ||
+        !integer(value.expectedRevision) ||
         !integer(value.x, 0, 14) ||
         !integer(value.y, 0, 14)
       ) return bad("move coordinates or revision");

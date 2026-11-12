@@ -1,3 +1,4 @@
+import { OnlineGames } from "./online-game.js";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import { createRuleGame, parseClientMessage, PROTOCOL_VERSION, validateNickname } from "@danpan/shared";
@@ -58,6 +59,7 @@ function requestHash(message: ClientMessage): string {
 }
 
 export class LobbyCoordinator {
+  private readonly online: OnlineGames;
   private closed = false;
   private readonly sockets = new Map<WebSocket, SocketState>();
   private readonly playerSockets = new Map<PlayerId, WebSocket>();
@@ -69,6 +71,7 @@ export class LobbyCoordinator {
   private readonly countdownDeadlines = new Map<string, number>();
 
   constructor(private readonly db: SqliteDatabase, private readonly wss: WebSocketServer, private readonly timing: LobbyTiming = DEFAULT_LOBBY_TIMING) {
+    this.online = new OnlineGames(db, () => this.broadcastSnapshots());
     const monotonicNow = performance.now();
     const utcNow = Date.now();
     const pending = this.db.prepare("SELECT challenge_id,response_deadline_utc FROM challenges WHERE status='PENDING'").all() as Array<{ challenge_id: string; response_deadline_utc: string }>;
@@ -113,6 +116,13 @@ export class LobbyCoordinator {
       if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid message");
       const input = value as Record<string, unknown>;
       if (input.protocolVersion !== PROTOCOL_VERSION || typeof input.type !== "string" || typeof input.requestId !== "string") throw new Error("invalid envelope");
+      if (["game.move.propose", "game.resign", "game.snapshot.request"].includes(String(input.type))) {
+        if (!input.requestId || input.requestId.length > 128 || typeof input.gameId !== "string" || !input.gameId || input.gameId.length > 128) throw new Error("invalid game envelope");
+        if (!state.playerId) { sendError(socket, input.requestId as string, "AUTH_REQUIRED", "세션 인증이 필요합니다."); return; }
+        try { sendResult(socket, input.requestId as string, this.online.command(state.playerId, input)); }
+        catch (error) { send(socket, { type: "server.error", requestId: input.requestId, ok: false, code: error instanceof Error ? error.message : "STORAGE_FAILED", message: "요청을 승인하지 못했습니다. 최신 상태를 확인하세요.", snapshot: null }); this.sendSnapshot(socket, state.playerId); }
+        return;
+      }
       if (input.type === "client.hello") {
         state.helloSeen = true;
         sendResult(socket, input.requestId as string, { accepted: true, protocolVersion: PROTOCOL_VERSION });
@@ -467,11 +477,11 @@ export class LobbyCoordinator {
       p.nickname_display AS opponent_name,prep.deadline_utc,prep.countdown_started_at_utc
       FROM games g JOIN players p ON p.player_id=CASE WHEN g.white_player_id=? THEN g.black_player_id ELSE g.white_player_id END
       LEFT JOIN game_preparation prep ON prep.game_id=g.game_id
-      WHERE (g.white_player_id=? OR g.black_player_id=?) AND g.status IN ('PREPARING','ACTIVE') ORDER BY g.created_at_utc DESC LIMIT 1`)
+      WHERE (g.white_player_id=? OR g.black_player_id=?) AND g.status IN ('PREPARING','ACTIVE','FINISHED','ABORTED') ORDER BY g.created_at_utc DESC LIMIT 1`)
       .get(playerId, playerId, playerId) as { game_id: string; status: string; white_player_id: string; black_player_id: string; opponent_name: string; deadline_utc?: string; countdown_started_at_utc?: string | null } | undefined;
     const myPending = challenges.length > 0;
     const presenceOnline = this.playerSockets.has(playerId);
-    const myState: PlayerSummary["state"] = gameRow ? "IN_GAME" : myPending ? "RESPONDING" : presenceOnline ? "WAITING" : "RECONNECTING";
+    const myState: PlayerSummary["state"] = gameRow && ["PREPARING", "ACTIVE"].includes(gameRow.status) ? "IN_GAME" : myPending ? "RESPONDING" : presenceOnline ? "WAITING" : "RECONNECTING";
     const snapshot: LobbySnapshot = {
       me: { playerId, nickname: row.nickname_display, state: myState },
       players: [
@@ -484,7 +494,7 @@ export class LobbyCoordinator {
         }),
       ],
       challenges,
-      game: gameRow ? { gameId: gameRow.game_id, status: gameRow.status,
+      game: gameRow ? { ...this.online.snapshot(gameRow.game_id), gameId: gameRow.game_id, status: gameRow.status,
         color: gameRow.white_player_id === playerId ? "WHITE" : "BLACK", opponentName: gameRow.opponent_name,
         ...(gameRow.deadline_utc ? { deadlineUtc: gameRow.deadline_utc } : {}),
         ...(gameRow.countdown_started_at_utc !== undefined ? { countdownStartedAtUtc: gameRow.countdown_started_at_utc } : {}),
@@ -541,6 +551,7 @@ export class LobbyCoordinator {
   }
 
   private sweep(): void {
+    this.online.sweep();
     const now = new Date();
     const nowIso = now.toISOString();
     const monoNow = performance.now();
@@ -561,8 +572,8 @@ export class LobbyCoordinator {
         this.preparationDeadlines.delete(item.game_id);
         this.countdownDeadlines.delete(item.game_id);
       } else if (item.countdown_started_at_utc && (this.countdownDeadlines.get(item.game_id) ?? 0) <= monoNow) {
-        const started = this.db.prepare("UPDATE games SET status='ACTIVE',revision=revision+1,updated_at_utc=? WHERE game_id=? AND status='PREPARING'").run(nowIso, item.game_id);
-        if (started.changes) startedCount += 1;
+        try { this.online.start(item.game_id); } catch { continue; }
+        startedCount += 1;
         this.db.prepare("DELETE FROM game_preparation WHERE game_id=?").run(item.game_id);
         this.preparationDeadlines.delete(item.game_id);
         this.countdownDeadlines.delete(item.game_id);
@@ -577,4 +588,3 @@ export class LobbyCoordinator {
 class LobbyError extends Error {
   constructor(readonly code: string, message: string) { super(message); }
 }
-

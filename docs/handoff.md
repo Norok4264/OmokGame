@@ -1,7 +1,7 @@
 # 개발 인수인계
 
 기록 시점: 2026-11-12 (Asia/Seoul)  
-현재 단계: 4단계 WebSocket 세션·대기열·신청·준비 구현 완료
+현재 단계: 5단계 서버 착수·60초·승패·기권 구현; 상세 최신 기록은 online-authority.md
 앱 버전: `0.1.0` (개발 뼈대; 완성 앱 버전 아님)
 
 ## 완료 범위
@@ -84,3 +84,6 @@ Codex 브라우저 localhost의 이전 360×800·1280×900 렌더 확인은 E3 �
 3. 게임 중 reconnect/snapshot 복구, 결과/기권/시간 제한을 추가한 뒤 재도전·채팅·PNG·오프라인 PWA·통신 보기와 기기 검증을 진행한다.
 
 다음 Codex 세션은 우선 `README.md`와 `docs/environment.md`, `docs/requirements.md`, `docs/protocol.md`, `docs/acceptance.md`, `docs/handoff.md`, `docs/evidence-index.md` 및 실제 소스를 읽는다. 전체 구조를 다시 만들지 않는다.
+
+## 5단계 온라인 착수·시간·종료 (2026-11-12)
+최신 구현/명령/결과와 E6-01~E6-03 증거는 [online-authority.md](online-authority.md)에 기록했다. 최종 7개 파일/44개 테스트 통과. A04/A05의 서버 착수·권한·양측 보드/revision/승자, 종료 후 중복 요청 재확인 및 저장 실패는 로컬 서버/SQLite 범위에서 부분 확인이다. 이전 단계의 미구현 기록은 당시 상태다. 실기기/브라우저 화면·실제 60초 대기·네트워크 장애 주입은 미검증이다.

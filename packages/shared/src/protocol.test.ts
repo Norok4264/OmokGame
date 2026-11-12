@@ -8,7 +8,7 @@ describe("shared protocol validation", () => {
       type: "game.move.propose",
       requestId: "req-1",
       gameId: "game-1",
-      revision: 3,
+      expectedRevision: 3,
       x: 14,
       y: 0,
     }));
@@ -23,7 +23,7 @@ describe("shared protocol validation", () => {
       type: "game.move.propose",
       requestId: "req-2",
       gameId: "game-1",
-      revision: 0,
+      expectedRevision: 0,
       x: 15,
       y: 0,
     }));

@@ -1,10 +1,11 @@
+import type { RuleGameState } from "@danpan/shared";
 import { PROTOCOL_VERSION } from "@danpan/shared";
 
 export type LobbyState = {
   me: { playerId: string; nickname: string; state: string };
   players: Array<{ playerId: string; nickname: string; state: string }>;
   challenges: Array<{ challengeId: string; applicantPlayerId: string; acceptorPlayerId: string; status: string; responseDeadlineUtc: string }>;
-  game: { gameId: string; status: string; color: "WHITE" | "BLACK"; opponentName: string; deadlineUtc?: string; countdownStartedAtUtc?: string | null; ready?: { white: boolean; black: boolean } } | null;
+  game: Omit<RuleGameState, "status"> & { revision: number; turnDeadlineUtc?: string | null; endReason?: string | null; gameId: string; status: string; color: "WHITE" | "BLACK"; opponentName: string; deadlineUtc?: string; countdownStartedAtUtc?: string | null; ready?: { white: boolean; black: boolean } } | null;
   serverTimeUtc: string;
 };
 
@@ -135,6 +136,7 @@ export class LobbyClient {
   }
 
   private handleMessage(message: Record<string, unknown>): void {
+    if (message.type === "command.result" && (message.data as any)?.snapshot) { void this.request("lobby.snapshot.request").catch(() => {}); }
     if (message.type === "command.result" || message.type === "server.error") {
       const requestId = String(message.requestId ?? "");
       const command = this.commands.get(requestId);

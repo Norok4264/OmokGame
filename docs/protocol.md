@@ -92,3 +92,7 @@
 - 닉네임 구현은 NFKC, 양끝 공백 제거, 대소문자 무시 비교, 2–12 Unicode code point, 한글/Unicode 문자·결합문자·숫자·`_`·`-`, `admin`/`system`/`guestN` 계열 등 예약 이름 거부를 적용했다. 개발 기준 원문 파일이 현재 작업 폴더에서 확인되지 않아 전체 허용 문자·예약어 목록과 일치하는지는 별도 미확인이다.
 
 challenge/session 및 게임 준비는 구현했다. 실제 게임 착수·종료, 채팅, 온라인 복구 및 재도전의 서비스 흐름은 다음 단계에서 구현한다.
+
+## 5단계 변경
+
+game.move.propose는 revision 대신 expectedRevision을 필수로 받는다. game.resign은 gameId/expectedRevision, game.snapshot.request는 gameId를 받는다. 공통 protocolVersion/requestId는 필수다. 성공 응답 data는 gameId/approvedRevision 및 최신 snapshot을 포함하고 재확인에는 replayed=true를 제공한다. 오래된 새 요청은 오류 뒤 최신 lobby.snapshot으로 복구한다. 새 착수 규칙 검사보다 성공 요청의 hash 조회가 먼저다. 자세한 트랜잭션/시간/종료 계약은 online-authority.md를 따른다.

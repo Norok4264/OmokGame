@@ -1,3 +1,4 @@
+import { OnlineGame } from "./OnlineGame.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, PointerEvent, RefObject } from "react";
 import {
@@ -34,6 +35,8 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 export function App() {
+  const dismissedGameRef = useRef<string | null>(null);
+  const [dismissedGame, setDismissedGame] = useState<string | null>(null);
   const [screen, setScreen] = useState<Screen>("home");
   const [nickname, setNickname] = useState("");
   const [effectiveName, setEffectiveName] = useState("");
@@ -101,7 +104,7 @@ export function App() {
     client.onSnapshot = (snapshot) => {
       setLobbyState(snapshot);
       setEffectiveName(snapshot.me.nickname);
-      if (snapshot.game) setScreen("online");
+      if (snapshot.game && snapshot.game.gameId !== dismissedGameRef.current) setScreen("online");
       else setScreen("queue");
       if (snapshot.game?.status === "PREPARING") setConnection("connected");
     };
@@ -626,7 +629,8 @@ export function App() {
         </section>
       )}
 
-      {screen === "online" && lobbyState?.game && (
+      {screen === "online" && lobbyState?.game && lobbyState.game.status !== "PREPARING" && lobbyState.game.gameId !== dismissedGame && lobbyClientRef.current && <OnlineGame ownName={effectiveName} info={lobbyState.game} client={lobbyClientRef.current} connected={lobbyStatus === "connected"} leave={() => { dismissedGameRef.current = lobbyState.game!.gameId; setDismissedGame(lobbyState.game!.gameId); setScreen("queue"); }} />}
+      {screen === "online" && lobbyState?.game?.status === "PREPARING" && (
         <section className="page-screen queue-screen preparation-screen" aria-labelledby="preparation-title">
           <AppHeader onHome={() => void cancelPreparation()} eyebrow="실제 WebSocket 대국 신청" />
           <div className="queue-card preparation-card">
@@ -639,7 +643,7 @@ export function App() {
               <div><span className="player-stone player-stone-black" /><strong>{lobbyState.game.color === "BLACK" ? effectiveName : lobbyState.game.opponentName}</strong><small>흑 · 선공</small></div>
             </div>
             <div className="connection-panel connection-ready" role="status" aria-live="polite">
-              <span className="status-symbol">{lobbyState.game.status === "ACTIVE" ? "✓" : "…"}</span>
+              <span className="status-symbol">{"…"}</span>
               <div><strong>{lobbyState.game.status === "PREPARING" ? "양쪽 준비를 기다립니다" : "대국 시작 안내 완료"}</strong>
                 <p>{lobbyState.game.status === "PREPARING"
                   ? lobbyState.game.countdownStartedAtUtc ? `양쪽 준비 완료 · ${countdownSeconds}초 뒤 시작합니다.` : "대국은 최대 10초 동안 준비합니다. 한 명이라도 준비하지 않으면 승패 없이 취소됩니다."
