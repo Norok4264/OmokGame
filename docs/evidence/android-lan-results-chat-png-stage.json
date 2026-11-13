@@ -1,0 +1,196 @@
+{
+  "evidenceId": "E16-Android-LAN-Results-Chat-PNG-Communication",
+  "observedAtLocal": "2026-11-13",
+  "appVersion": "0.6.0-android-results-chat-comm",
+  "versionCode": 4,
+  "lanProtocol": "danpan-lan-v4",
+  "scope": "Android LAN result room, rematch, chat, native result PNG storage/share/open, and safe communication event viewer source implementation",
+  "runtime": {
+    "npmInvocation": "npm 12.2.2 via pnpm dlx",
+    "nodeVersion": "NOT_CHECKED_DURING_THIS_STAGE",
+    "javaHome": "C:\\Users\\Administrator\\.jdks\\ms-17.0.21.0.2",
+    "directKotlinCompiler": "Android Studio bundled kotlinc-jvm 2.4.0",
+    "androidSdkCompileClasspath": "API 36 android.jar",
+    "gradleWrapper": "8.13",
+    "adb": "1.0.41 / platform-tools 37.0.1-15733141",
+    "connectedDevices": 0,
+    "initialObservationNote": "The initial E16 adb query returned no devices; see followUp after USB debugging was completed."
+  },
+  "implementation": {
+    "resultRoom": "Result expiration is ended_at_ms + 300000 ms. Rematch response deadline is min(request time + 30000 ms, fixed result-room expiration). Loser requests; stored winner accepts or declines; requester can cancel. After decline/cancel/response expiry, a 10-second cooldown allows another request while the original result room remains open. Acceptance stores rematch transition and a new UUID game with an empty board, requester WHITE, responder BLACK, same authorityPlayerId, BLACK to move, new 60s deadline, and revision 0 in one SQLite transaction.",
+    "chat": "Participant-only gameId/messageId/body commands; 1-200 Unicode code points; 5 messages per sender per rolling five seconds; last 100 rows and independent per-game sequence. Message ID/body hash supports same-ID manual retry. Finished games are read-only; expiry deletes message bodies and replay hashes. UI stores a per-game draft and does not auto-send after reconnection; composition and keyCode 229 block Enter during Korean IME composition.",
+    "png": "Kotlin Canvas renderer uses final board, names/colors, result title/reason, winning move marker for five-in-a-row, and local save timestamp. Explicit render fields exclude chat, token, address, and identifiers. API 29+ MediaStore Pictures/DanpanOmok, legacy ACTION_CREATE_DOCUMENT, ACTION_VIEW, ACTION_SEND with URI read grant.",
+    "communication": "Actual LanTransport RPC write/read and authority socket receive/reply hooks. In-memory ArrayDeque bounded to 200 events. Metadata only: type/direction/time/coordinates/revision/UTF-8 JSON bytes/short IDs/chat codepoint count. No token, raw payload, or chat body. Requester RTT uses same-device elapsedRealtimeNanos and is labeled application RTT. Host authority and OSI role explanation appear separately.",
+    "protocol": "Android wire protocol bumped from danpan-lan-v3 to danpan-lan-v4; app versionCode 4/versionName 0.6.0-android-results-chat-comm. SQLiteOpenHelper schema 3 adds rematches, chat messages, and message ID hash tables."
+  },
+  "checks": [
+    {
+      "command": "pnpm dlx npm@12.2.2 run typecheck",
+      "result": "PASS, exit code 0. pnpm reports the existing npm workspaces field warning; no repository dependency or lockfile changes were made. Node version was not rechecked in this invocation."
+    },
+    {
+      "command": "pnpm dlx npm@12.2.2 test",
+      "result": "PASS, 23 Vitest files and 117 tests. These are current shared/server/web tests, not Android SQLite or LAN device tests."
+    },
+    {
+      "command": "pnpm dlx npm@12.2.2 run build:web",
+      "result": "PASS, Vite 8.3.7 production WebView assets generated at apps/web/dist. This does not package an APK."
+    },
+    {
+      "command": "Android Studio bundled kotlinc 2.4.0 -jvm-target 17 -classpath Android SDK API 36 android.jar -d android/app/build/kotlinc-check <all android/app/src/main/java/**/*.kt>",
+      "result": "PASS, exit code 0. Only Android API deprecation warnings. This direct compiler check is not the project's Kotlin Gradle Plugin 2.3.10 task or APK packaging."
+    },
+    {
+      "command": "Android Studio bundled kotlinc -jvm-target 17 -include-runtime -d android/app/build/lan-result-chat-vectors.jar LanResultChatPolicy.kt LanResultChatPolicyVectors.kt; java -jar android/app/build/lan-result-chat-vectors.jar",
+      "result": "PASS: LAN result/chat fake-time vectors: all cases passed. Covers fixed 5-minute room and min(30-second response, room expiry), result-room expiry, 10-second re-request cooldown, 1/200/201 Unicode code point boundaries including supplementary characters, rolling 5-second edge, and 5-message sender cap. Policy-only test; no SQLite or Android runtime."
+    },
+    {
+      "command": ".\\gradlew.bat :app:assembleDebug (JDK17 selected in the process)",
+      "result": "FAIL after starting Gradle daemon: java.io.IOException Unable to establish loopback connection. Gradle did not configure project tasks; no APK produced."
+    },
+    {
+      "command": ".\\gradlew.bat --no-daemon :app:assembleDebug with JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true",
+      "result": "FAIL with the same Unable to establish loopback connection."
+    },
+    {
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe version; adb.exe devices -l",
+      "result": "PASS for the read-only tool query: adb 1.0.41 / platform-tools 37.0.1-15733141; no device/emulator listed."
+    },
+    {
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\emulator\\emulator.exe -list-avds",
+      "result": "FAIL to start: Windows returned Access denied. No emulator was launched and no AVD runtime result was observed."
+    },
+    {
+      "command": "adb devices -l; adb shell getprop ro.product.model; adb shell getprop ro.build.version.release; adb shell getprop ro.build.version.sdk",
+      "result": "PASS: two authorized devices, state device: SM-N981N / Android 13 / API 33 and SM-X510 / Android 16 / API 36. Serials omitted."
+    },
+    {
+      "command": "adb -s <device> shell am get-current-user; adb -s <device> shell dumpsys package com.android.chrome",
+      "result": "PASS: current user 0 Chrome versions SM-N981N 157.0.8103.50 and SM-X510 157.0.8103.78. Factory image/profile package records also exist; these versions are from the current user app record."
+    }
+  ],
+  "outcomes": {
+    "typescriptTypecheck": "PASS",
+    "existingTests": "PASS_117_TESTS",
+    "webAssets": "PASS_VITE_8_3_7",
+    "mainKotlinDirectCompile": "PASS_DIRECT_COMPILER_ONLY",
+    "resultChatPolicyVectors": "PASS_POLICY_ONLY",
+    "gradleApk": "FAILS_BEFORE_TASK_CONFIGURATION_LOOPBACK_CONNECTION",
+    "androidSqliteRuntime": "NOT_RUN",
+    "twoDeviceLan": "NOT_RUN",
+    "nativePngSave": "NOT_RUN",
+    "savedPngOpenedOnAndroid": "NOT_RUN",
+    "androidCommunicationViewer": "NOT_RUN",
+    "screenshotsOrPacketCaptures": "NONE_CREATED"
+  },
+  "evidenceFiles": [
+    "docs/android-lan-results-chat-png.md",
+    "android/app/src/main/java/kr/danpan/omok/LanGameRepository.kt",
+    "android/app/src/main/java/kr/danpan/omok/LanTransport.kt",
+    "android/app/src/main/java/kr/danpan/omok/LanResultPng.kt",
+    "android/app/src/main/java/kr/danpan/omok/MainActivity.kt",
+    "apps/web/src/NativeLanScreen.tsx",
+    "apps/web/src/android-bridge.ts"
+  ],
+  "limitations": [
+    "Kotlin direct compilation does not validate Android Gradle configuration, dexing, APK signing, manifest merging, or runtime behavior.",
+    "No APK was generated because Gradle fails during startup with a loopback connection error.",
+    "The installed emulator binary could not be started for AVD enumeration because Windows returned Access denied.",
+    "No APK was available to install on the two now-authorized Android devices; no Android result PNG was saved or opened, and no LAN event/SQLite behavior was observed on devices.",
+    "No screenshot, packet capture, runtime event count, PNG file, or performance measurement was created for this stage."
+  ],
+  "followUp": {
+    "observedAtLocal": "2026-11-13",
+    "trigger": "User completed USB debugging authorization on both phones.",
+    "adbCommand": "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe devices -l",
+    "adbResult": "Two authorized devices listed with state device. Serial numbers intentionally omitted from report.",
+    "devices": [
+      { "model": "SM-N981N", "androidRelease": "13", "api": 33, "currentUserChrome": "157.0.8103.50" },
+      { "model": "SM-X510", "androidRelease": "16", "api": 36, "currentUserChrome": "157.0.8103.78" }
+    ],
+    "gradleCommand": ".\\gradlew.bat :app:assembleDebug with JDK17 selected in process",
+    "gradleResult": "FAIL: java.io.IOException Unable to establish loopback connection during Gradle initialization; stack trace root cause java.net.SocketException: Invalid argument: connect in JDK17 PipeImpl/UnixDomainSockets. A --no-daemon attempt with empty org.gradle.jvmargs still forked a single-use daemon and failed identically; no APK generated.",
+    "deviceAndBrowserInventory": "COMPLETE_FOR_CONNECTED_DEVICES",
+    "androidLanAppRuntime": "NOT_RUN_NO_APK",
+    "trustedHttpsPwaRuntime": "NOT_RUN_NO_TRUSTED_SERVER_OR_DOMAIN",
+    "pngOnDevice": "NOT_RUN_NO_APK",
+    "capturedAtLocal": "2026-11-13"
+  },
+  "deviceRunAfterBuildRecovery": {
+    "observedAtLocal": "2026-11-13 13:23-13:41 Asia/Seoul",
+    "appVersion": "0.6.0-android-results-chat-comm",
+    "versionCode": 4,
+    "lanProtocol": "danpan-lan-v4",
+    "build": {
+      "command": ".\\gradlew.bat :app:assembleDebug (JDK17; process-only JAVA_TOOL_OPTIONS with java.io.tmpdir and jdk.net.unixdomain.tmpdir under project build temp; SDK provided via process-only ANDROID_HOME/ANDROID_SDK_ROOT; temporary subst X: ASCII project path)",
+      "result": "PASS: BUILD SUCCESSFUL in 37s, 36 actionable tasks. A later rebuild after NSD protocol fix also succeeded in 17s. Warnings: SDK parser noticed XML v4; Kotlin deprecated APIs.",
+      "apk": "android/app/build/outputs/apk/debug/app-debug.apk, 6912733 bytes, file timestamp 2026-11-13 13:31:38 Asia/Seoul",
+      "sourceFixes": [
+        "Migrated android.kotlinOptions.jvmTarget to kotlin.compilerOptions.jvmTarget after KGP 2.3.10 rejected the old DSL.",
+        "Fixed NSD mismatch: advertiser wrote protocol=4 while discovery expected 3; registration and discovery now use SERVICE_PROTOCOL_VERSION=4."
+      ],
+      "globalToolChanges": "NONE"
+    },
+    "installAndLaunch": "adb install -r succeeded on SM-N981N and SM-X510; am start and dumpsys confirmed kr.danpan.omok/.MainActivity foreground on both. Device serials are intentionally omitted.",
+    "observations": [
+      {
+        "test": "NSD discovery",
+        "result": "PASS_AFTER_FIX",
+        "details": "Before fix, each device reported protocol version mismatch and zero visible peers. After rebuilding/reinstalling with protocol v4 constant, each discovered one peer on the same Wi-Fi.",
+        "screenshots": ["docs/evidence/android-lan-discovery-phone.png", "docs/evidence/android-lan-discovery-tablet.png"]
+      },
+      {
+        "test": "challenge, acceptance, and new game snapshot",
+        "result": "PASS_OBSERVED",
+        "details": "Two device screens showed applicant WHITE/acceptor BLACK, authority host independently guest1 tablet, fresh revision 0 board, BLACK to move and 60-second turn. A confirmed move was not achieved before timeout.",
+        "screenshots": ["docs/evidence/android-lan-challenge-accepted.png", "docs/evidence/android-lan-game-start-phone.png"]
+      },
+      {
+        "test": "timeout result synchronization",
+        "result": "PASS_OBSERVED_FOR_TIMEOUT_ONLY",
+        "details": "A move attempt did not commit before timeout; both clients displayed guest2 win, TIME_LOSS and final revision 1. This does not verify five-in-a-row or other result reasons. Full-screen diagnostic screenshots remain under ignored android/app/build/.",
+        "winningMoveOrBoardSync": "NOT_VERIFIED"
+      },
+      {
+        "test": "native result PNG save and open",
+        "result": "PASS_OPENED_IN_SAMSUNG_GALLERY",
+        "details": "Winner used PNG save-and-open; GalleryActivity became foreground. Opened image showed participant names/colors, time-loss reason, full 15x15 empty board, and saved timestamp 2026-11-13 13:35:27 GMT+09:00. This was an empty-board timeout result; winning marker and share are unverified.",
+        "screenshot": "docs/evidence/android-result-png-opened-gallery.png"
+      },
+      {
+        "test": "rematch request and acceptance",
+        "result": "PASS_OBSERVED",
+        "details": "Loser requested and winner accepted. Both clients showed new empty revision 0 game; requester guest1 became WHITE, responder guest2 BLACK, while authority stayed guest1, confirming host role separate from color.",
+        "screenshots": ["docs/evidence/android-rematch-accepted-phone.png", "docs/evidence/android-rematch-accepted-tablet.png"]
+      },
+      {
+        "test": "chat and communication viewer",
+        "result": "NOT_PASSED",
+        "details": "Tablet capture showed draft hello-lank and an empty message list; no successful send/peer receipt was observed. Communication viewer event contents/privacy/200-event cap were not confirmed. Do not report chat as passing.",
+        "diagnosticScreenshot": "android/app/build/chat-SM-X510.png"
+      }
+    ],
+    "stillUnverified": [
+      "Android SQLite migration and transaction failure injection",
+      "confirmed move synchronization, five-in-a-row, draw, resign, disconnect-loss, mutual disconnect invalid result",
+      "simultaneous challenge race, unauthorized requests, duplicate requestId and stale revision behavior on device",
+      "chat send/receive, message ID retry, Korean IME composition, rate/history boundaries",
+      "communication viewer real event content, token/body exclusion, application RTT and 200-entry limit",
+      "result-room 5-minute and rematch 30-second deadline boundaries",
+      "PNG winning marker, file share, multiple viewer compatibility",
+      "Wi-Fi loss/return or IP change, app background/screen off/process death/host restart recovery",
+      "Android network permission denial behavior"
+    ],
+    "pwaTrustedHttps": "NOT_RUN: no trusted HTTPS/WSS domain or server was provided; separate from Android local Wi-Fi LAN APK run.",
+    "sensitiveCaptureCleanup": "Deleted docs/evidence/android-home-SM-X510.png from this evidence run because it included a personal app notification. No device serials are recorded.",
+    "curatedScreenshots": [
+      "docs/evidence/android-lan-discovery-phone.png",
+      "docs/evidence/android-lan-discovery-tablet.png",
+      "docs/evidence/android-lan-challenge-accepted.png",
+      "docs/evidence/android-lan-game-start-phone.png",
+      "docs/evidence/android-result-png-opened-gallery.png",
+      "docs/evidence/android-rematch-accepted-phone.png",
+      "docs/evidence/android-rematch-accepted-tablet.png"
+    ]
+  }
+}

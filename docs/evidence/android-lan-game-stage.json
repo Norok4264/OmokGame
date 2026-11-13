@@ -1,0 +1,81 @@
+{
+  "evidenceId": "E14-Android-LAN-Game-Implementation",
+  "observedAtLocal": "2026-11-13",
+  "appVersion": "0.4.0-android-lan",
+  "scope": "React/WebView LAN game screen, Android Kotlin LAN transport and SQLite-authority sources, pure Kotlin rules vectors, web production assets, Android build/device availability",
+  "runtime": {
+    "node": "v24.22.3",
+    "npm": "12.2.2",
+    "vite": "8.3.7",
+    "androidStudioKotlinCompiler": "C:\\Program Files\\Android\\Android Studio\\plugins\\Kotlin\\kotlinc\\bin\\kotlinc.bat",
+    "androidSdkApi": 36,
+    "javaHome": "C:\\Users\\Administrator\\.jdks\\ms-17.0.21.0.2",
+    "gradleWrapper": "8.13",
+    "adb": "1.0.41 / platform-tools 37.0.1-15733141"
+  },
+  "checks": [
+    {
+      "command": ". .\\scripts\\use-pinned-runtime.ps1; npm run typecheck",
+      "result": "Passed: shared, server, and web TypeScript type checks."
+    },
+    {
+      "command": ". .\\scripts\\use-pinned-runtime.ps1; npm test",
+      "result": "Passed: 23 Vitest files / 117 tests. This is the existing PWA/shared/server suite, not LAN SQLite integration."
+    },
+    {
+      "command": ". .\\scripts\\use-pinned-runtime.ps1; npm run build:web",
+      "result": "Passed: Vite built index.html, CSS/JS, and the bot worker into apps/web/dist for Android assets."
+    },
+    {
+      "command": "Kotlin compiler -classpath Android SDK API 36 android.jar -d .cache\\android-kotlin-check <LanProtocol.kt LanGameRules.kt LanGameJson.kt LanNickname.kt LanGameRepository.kt LanTransport.kt MainActivity.kt>",
+      "result": "Passed source compilation with deprecation warnings in the existing WebView/window APIs. This was a direct Kotlin compiler check, not Gradle Android packaging, resource processing, dexing, or installation."
+    },
+    {
+      "command": "Kotlin compiler -d .cache\\lan-rules-test LanGameRules.kt LanGameRulesVectors.kt; kotlin -classpath .cache\\lan-rules-test kr.danpan.omok.LanGameRulesVectorsKt",
+      "result": "Passed: horizontal five, overline, vertical and both diagonal directions, edge win, last-cell draw, last-cell win precedence, free-rule three, wrong-turn/occupied/out-of-bounds vectors. Output: LAN rule vectors: all cases passed."
+    },
+    {
+      "command": ".\\gradlew.bat :app:assembleDebug --no-daemon --max-workers=1",
+      "result": "Gradle printed FAILURE before project configuration/compilation: java.io.IOException Unable to establish loopback connection. No APK was produced."
+    },
+    {
+      "command": "adb version; adb devices -l; emulator -list-avds; Test-Path android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+      "result": "adb 1.0.41/platform-tools 37.0.1-15733141; no connected device; AVD inventory lists Medium_Phone_API_37.0, not started; APK path absent."
+    }
+  ],
+  "implementation": {
+    "discoveryAndElection": "Each install advertises a stable playerId, nickname, and protocol v2 over NSD. The lower lexicographic install UUID is the authority for that pair; users never enter addresses or ports. Both devices can originate a challenge through their authority direction.",
+    "challengeAndColor": "A 30-second PENDING challenge is serialized in the authority SQLite store. The non-authority device applies to the authority, or the authority can offer a challenge to the higher-ID device. In both directions applicantId maps to whiteId and acceptorId maps to blackId; authority_id is stored separately.",
+    "authorityState": "SQLiteOpenHelper tables: lan_players, lan_challenges, lan_games, lan_moves, lan_requests. A single synchronized transaction checks deadlines/permissions/revision, writes state and successful request records, and commits before response snapshots are published.",
+    "movePath": "Both local host moves and remote requests call LanGameRepository.handle with requestId/expectedRevision/x/y. Only committed snapshots replace board stones; request replay returns the current snapshot and request payload conflicts are rejected.",
+    "nicknameScope": "NFKC/trim, 2-12 grapheme, letters/marks/numbers/_/-, reserved-name rejection, atomic guestN allocation; normalized names are unique in the authority device database. Other authority databases are separate scopes.",
+    "gameClock": "The authority persists a 60-second turn deadline and checks it every 250ms; timeout state and a system success record are committed together."
+  },
+  "outcomes": {
+    "webTypecheck": "PASS",
+    "existingAutomatedSuite": "PASS_117_TESTS",
+    "webAssetBuild": "PASS",
+    "allKotlinSourceCompileAgainstSdkJar": "PASS_DIRECT_COMPILER_ONLY",
+    "pureKotlinRuleVectors": "PASS",
+    "GradleAndroidBuild": "FAILED_BEFORE_PROJECT_COMPILATION",
+    "debugApk": "NOT_CREATED",
+    "sqliteAndroidRuntime": "NOT_RUN",
+    "twoDeviceLan": "NOT_RUN",
+    "physicalAndroidDevice": "NONE_CONNECTED",
+    "emulator": "AVAILABLE_IN_INVENTORY_NOT_STARTED",
+    "screenshotsOrPacketCaptures": "NONE"
+  },
+  "unverified": [
+    "SQLite transaction execution and injected database write failure on Android",
+    "Simultaneous challenge/cancel/accept socket race on two devices",
+    "Wrong participant/token rejection over live sockets",
+    "Host-originated move and remote-originated move board/revision/result equality on devices",
+    "60-second timeout, activity/process interruption, NSD/Wi-Fi permission behavior, and router isolation",
+    "APK install, WebView rendering, Android keyboard, and Android result screen"
+  ],
+  "limitations": [
+    "A LAN authority uses plain TCP JSON; it is not encrypted and does not provide public-Internet security.",
+    "An Activity/process kill stops its host service; automatic host migration and post-process reconnection are not implemented here.",
+    "LAN chat, rematch, PNG save/share, and the full PWA result-room policy remain separate integration work."
+  ]
+}

@@ -62,11 +62,12 @@ data/
 Thumbs.db
 desktop.ini
 
-# Android, if an APK project is added in a later approved step
+# Android machine-specific settings, generated outputs and signing secrets
 local.properties
 **/local.properties
 .gradle/
 **/.gradle/
+.gradle-user-home/
 *.jks
 *.keystore
 *.p12

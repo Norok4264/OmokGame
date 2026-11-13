@@ -111,12 +111,14 @@ node scripts/check-pwa-update.mjs
 
 ## 11단계 필수 게이트와 최소 사용자 조작
 
+2026-11-13 후속 확인은 E17 Android 실기 통합 기록을 추가했다. G11-02 기기 인벤토리와 E16 APK 빌드/설치, 양 기기 검색·신청·승낙·새 판·시간패/PNG/재도전 일부를 실제로 확인했다. 착수 동기화·채팅·단절/재접속·Wi-Fi 전환·호스트 종료·역할 교환 등은 미검증이다. PWA Android HTTPS/오프라인 G11-06은 여전히 별도 신뢰 서버/도메인이 필요하며 이 LAN APK 결과를 대신할 수 없다. 실제 모델/OS/앱/권한/공유망·인터넷 상태와 A/B 매핑은 [acceptance.md Android 매트릭스](acceptance.md#android-요구사항--기존-ab-대응표), [E17 통합 JSON](evidence/android-lan-integration-stage.json)에 기록했다.
+
 현재 환경에서 실행 가능한 자동/브라우저 검증은 수행했다. 아래는 실제 자원이 없어 미실행인 항목이며 통과로 바꾸지 않는다.
 
 | Gate | 필요한 자원·수집 절차 |
 |---|---|
 | G11-01 | 실제 별도 PC 2대에서 PC-PC 한 판 완료. 각 OS·Chrome/Edge 실제 버전·웹 빌드·승패/최종 보드/로그 기록. 같은 PC 두 context를 대신 세지 않음 |
-| G11-02 | Android 2대 연결/접근 확보 후 `adb devices -l`, 각 기기의 설정/Chrome 버전 또는 `adb -s SERIAL shell dumpsys package com.android.chrome`로 실제 버전 수집. 학번·성명 추정 금지 |
+| G11-02 | Android 2대 연결/접근 확보 후 `adb devices -l`, 각 기기의 설정/Chrome 버전 또는 `adb -s SERIAL shell dumpsys package com.android.chrome`로 실제 버전 수집. 학번·성명 추정 금지. **후속 확인:** 두 기기 ADB 승인 및 모델/OS/Chrome 버전 수집 완료(E16 후속). |
 | G11-03 | PC-Android, Android-Android 각각 한 판 및 여섯 종료 사유·재도전/5분 만료. 양쪽 보드·revision·종료 이유 일치 증거 |
 | G11-04 | 실제 Wi-Fi 단절/이동통신 전환·백그라운드/탭 복원·양쪽 단절·늦은 요청. 원래 턴 마감, 인증→snapshot→입력, 기존 창 중지를 확인 |
 | G11-05 | Android 실제 키보드/한글 IME·스크롤·팝업 초점·회전, 360px/1280px, 일반 버튼 영역·그라데이션을 포함한 글자 대비를 실제 측정. DOM composition 주입/뷰포트 에뮬레이션은 대체 실기 아님 |
@@ -127,6 +129,24 @@ node scripts/check-pwa-update.mjs
 
 실기 준비 전 최소 재검사는 프로젝트 루트의 `node scripts/verify-integrated.mjs`. 화면 확인은 의존성이 준비된 개발 셸에서 `npm run dev` 후 독립 프로필 두 개로 입장→신청/승낙→준비→착수/채팅→승리→PNG/재도전이다. 이번 작업에서 공개 서버를 배포하거나 신뢰 HTTPS를 구축했다고 주장하지 않는다.
 
+## E19 Android 채팅 양측 화면 후속
+
+E18에서 미검증으로 남긴 채팅 상대 수신 표시를 사용자가 각 Android `DCIM/Screenshots`에 저장한 캡처로 확인했다. 태블릿 송신 화면은 `나 · guest1 ㅎㅎ` 파랑, 휴대전화 수신 화면은 동일 메시지 `상대 · guest1 ㅎㅎ` 빨강이다. 두 기기 모두 설치 앱 versionName `0.6.0-android-results-chat-comm`/versionCode4를 다시 확인했다. 이에 따라 기본 채팅 송수신 UI 검증은 통과로 갱신하되 IME 조합, 중복 ID, 전송 제한 경계, 단절 복구와 통신 보기까지 확장하지 않는다. 실제 자료는 [E19 JSON](evidence/android-lan-chat-followup.json), [증거 색인](evidence-index.md#android-채팅-양측-실제-화면-e19)이다.
+
 ## 증거와 인수인계
 
 실제 화면/앱 이벤트/자동 시험은 E11, 코드 기반 구조·OSI 설명은 C10, 미수집 패킷/실기 계획은 P10 및 G11로 구분한다. 역사 E9/E10 파일은 이전 빌드 그대로 보존했다. 모든 최신 성공 JSON의 completed와 build를 함께 확인한다. 이번 검증만으로 전체 실기 인수 완료를 선언하지 않는다.
+
+## Android 전환 실기 통합 후속 E17
+
+Android 실기 결과와 제한은 [E17 증거 JSON](evidence/android-lan-integration-stage.json)과 [acceptance.md 매트릭스](acceptance.md#android-요구사항--기존-ab-대응표)에 기록했다. 연결된 두 기기는 모델/OS 및 앱 v4를 확인했다. 같은 WPA2-Enterprise SSID·같은 `/21` 대역·같은 게이트웨이에서 NSD/도전 승낙은 관찰됐지만 Wi-Fi가 인터넷 `VALIDATED`였고 휴대전화 셀룰러도 살아 있어 인터넷 차단 시험은 아니다. 알림 권한은 전화기 denied/태블릿 granted. 이 환경과 제한을 분리해 기록한다.
+
+이번 차수에서는 이전 NSD v3/v4 비교 불일치를 E16에서 수정한 소스로 재확인했고 현재 빌드가 두 기기에 설치된 상태였다. LAN 요청/승낙 후 revision0 화면이 만들어졌지만 사람의 화면 확인 사이 turn timer가 만료되어 두 차례 실기 모두 돌 확정 전 시간패가 발생했다. 성공 착수로 판정하지 않는다. 대국 채팅 UI를 보았지만 전송/수신은 성공하지 못했다. 나머지 호스트 기기 교환·동시 신청·다중 상대·force-stop/screen-off/Wi-Fi 재연결·완전 오프라인·guest isolation은 장치/네트워크 한계 때문에 미검증으로 둔다. 이 차수에서 코드 수정은 추가하지 않았으며 이전 E16 코드 수정은 [handoff](handoff.md)의 후속 기록을 따른다.
+
+## Android 두 기기 실기 후속 E18
+
+2026-11-13 14:05–14:12 KST에 동일한 SM-N981N/SM-X510 기기 쌍에서 앱 versionName `0.6.0-android-results-chat-comm`, versionCode4를 adb로 재확인했다. 실제 NSD 검색, 상대 선택, 신청/승낙, H8 후보와 확정, 다른 기기의 흑돌·호스트 승인 문구, 권위 호스트 SQLite move row(revision1, x7/y7, BLACK)를 관찰했다. 첫 게임은 흑 H8 후 백 제한시간 만료로 양쪽 TIMEOUT/guest1 승리/revision2 결과가 일치했다. 호스트 DB 역할은 WHITE guest2, BLACK guest1, 권위자 BLACK이었다.
+
+패자 요청/승자 승낙으로 재도전을 시작해 빈 revision0 보드와 빈 채팅을 확인했다. 태블릿 메시지는 송신 화면에 나타나고 “전송 완료”가 됐으며 권위 DB에 sequence1/body length10으로 저장됐다. adb 입력기 동작으로 메시지는 공백 대신 `%20`을 포함한 `chat%20okk`였다. 수신기 화면으로 이동하는 중 60초 제한시간이 끝나 수신 메시지 UI는 확인하지 못했다. 새 판은 미착수 TIMEOUT/revision1로 끝났다. 따라서 채팅 송신·권위 DB 저장은 부분 통과, 상대 화면의 도착 표시는 미검증이다.
+
+실제 명령/결과/PNG 및 제한은 [E18 JSON](evidence/android-lan-integration-followup-2.json)과 [evidence-index E18](evidence-index.md#android-두-기기-실기-후속-e18)에 있다. DB 사본은 ignored `android/app/build` 아래 진단용이며 제출하지 않는다. 코드 수정과 자동 시험 재실행은 하지 않았다. E17에서 Wi-Fi가 `VALIDATED/INTERNET`이고 phone cellular가 살아 있었으므로 E18도 인터넷 없는 LAN 검증이 아니다.

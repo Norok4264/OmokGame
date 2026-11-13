@@ -1,5 +1,15 @@
 # 환경 확인 — 0단계
 
+## Android 전환 1단계 업데이트 — 2026-11-13
+
+0단계 뒤 `android/`에 연결 시제품 프로젝트가 추가되었다. 선택 조합은 Wrapper8.13/AGP8.13.2/Kotlin2.3.10/JDK17/SDK36, minSdk23/targetSdk36/JVM17이며 `gradle-daemon-jvm.properties`에서 JDK17 기준을 고정했다. 프로젝트 Wrapper `--version`을 실행해 Gradle 8.13 Launcher/Daemon JVM17을 확인했다. `assembleDebug`는 Gradle loopback pipe 생성 오류로 빌드 구성 전 중단되었다. adb 장치 목록은 비었고 `Medium_Phone_API_37.0` AVD는 등록됐으나 실행하지 않았다. Studio 설정 UI의 Gradle JDK 드롭다운은 따로 읽지 않았으며 global JDK 설정 변경 없음. 실제 결과/명령은 [시제품 증거](evidence/android-lan-prototype.json), 구성 근거는 [Android 시제품 문서](android-lan-prototype.md)를 본다.
+
+## Android 전환 0단계 완료 — 2026-11-13
+
+[실제 조사표·호환 후보·명령과 한계](android-stage0.md)를 최신 환경 기록으로 사용한다. Studio2026.2.2/build262.10968.63.2622.16730706, 번들/과거 IDE 로그 JBR25.0.4, 별도 실행 확인된 Microsoft JDK17.0.21.0.2가 있다. 현재 PATH Node26.13.1/npm11.20.0이며 프로젝트 전용24.22.3/12.2.2와 구분한다. SDK36/37.0, Build Tools35/36, AVD1개가 있으나 연결 기기 없음. Android 프로젝트가 없어 Gradle JDK·Daemon JVM·Wrapper·AGP·Kotlin은 프로젝트 생성 전 미설정이다. 도구 업그레이드는 하지 않았다.
+
+> 2026-11-13 Android 전환: 아래의 ‘Android 도구 비필수’는 과거 PWA 범위의 기록이다. 이제 Android Studio/IDE JBR/Gradle JDK/SDK/Wrapper/AGP 실제 조사가 선행 조건이다. 이번 전환 준비에서는 새 버전 조합을 확정하지 않았다. [전환 기준](android-transition.md) 참조.
+
 확인일: 2026-11-11 (Asia/Seoul)
 
 ## 접근 범위

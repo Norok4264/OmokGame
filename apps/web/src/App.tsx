@@ -4,6 +4,8 @@ import { PwaStatus } from "./PwaStatus.js";
 import { loadSolo } from "./solo-state.js";
 import { updateLocked } from "./pwa.js";
 import { OnlineGame } from "./OnlineGame.js";
+import { NativeLanScreen } from "./NativeLanScreen.js";
+import { isAndroidApp } from "./android-bridge.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, PointerEvent, RefObject } from "react";
 import {
@@ -20,7 +22,7 @@ import { chooseBotMove } from "./bot.js";
 import { clearSavedSession, loadSavedSession, LobbyClient } from "./lobby-client.js";
 import type { LobbyClient as LobbyClientType, LobbyState, LobbyStatus, SavedSession } from "./lobby-client.js";
 
-type Screen = "home" | "queue" | "online" | "solo";
+type Screen = "home" | "queue" | "lan" | "online" | "solo";
 type GameMode = "online-demo" | "solo";
 type ProbeState = "checking" | "ready" | "unavailable";
 type DemoConnection = "connected" | "reconnecting" | "failed";
@@ -140,6 +142,7 @@ export function App() {
 
   useEffect(() => {
     const solo=loadSolo(); if(solo){setSoloActive(solo.state.status==="ACTIVE");setScreen("solo");setBooting(false);return;}
+    if (isAndroidApp()) { setBooting(false); return () => lobbyClientRef.current?.stop(); }
     setBooting(false);
     const saved = loadSavedSession();
     if (saved) void connectLobby("", saved);
@@ -244,8 +247,14 @@ export function App() {
   }, []);
 
   const openQueue = () => { if(!updateLocked())void connectLobby(nickname); };
+  const openLan = () => {
+    if (!isAndroidApp()) { openQueue(); return; }
+    setEffectiveName(nickname.trim() || "게스트");
+    setScreen("lan");
+  };
 
   const returnHome = async () => {
+    if (screen === "lan") window.AndroidOmok?.stop();
     const client = lobbyClientRef.current;
     if (client && lobbyStatus === "connected") {
       try { await client.request("session.end"); } catch { /* local reset still ends this client's credentials */ }
@@ -537,15 +546,16 @@ export function App() {
   };
 
   const selectedGame = game;
+  const isAndroid = isAndroidApp();
 
   return (
     <main className="app-shell">
-      <CommunicationView/>
+      {!isAndroid && <CommunicationView/>}
       {screen === "online" && lobbyState?.game?.status !== "PREPARING" && lobbyError && <p role="alert">{lobbyError}</p>}
       <div className="ambient ambient-one" aria-hidden="true" />
       <div className="ambient ambient-two" aria-hidden="true" />
 
-      <PwaStatus busy={booting || screen==="solo"&&soloActive || screen==="online"&&Boolean(lobbyState?.game&&["ACTIVE","PREPARING"].includes(lobbyState.game.status)) || Boolean(lobbyState?.challenges.length) || lobbyState?.game?.resultRoom?.retry?.status==="PENDING"}/>
+      {!isAndroid && <PwaStatus busy={booting || screen==="solo"&&soloActive || screen==="online"&&Boolean(lobbyState?.game&&["ACTIVE","PREPARING"].includes(lobbyState.game.status)) || Boolean(lobbyState?.challenges.length) || lobbyState?.game?.resultRoom?.retry?.status==="PENDING"}/>}
       {screen==="solo" && <SoloGame onActivity={setSoloActive} onLeave={()=>{setSoloActive(false);setNickname("");setScreen("home");}}/>}
       {screen === "home" && (
         <section className="home-screen" aria-labelledby="app-title">
@@ -565,18 +575,20 @@ export function App() {
               autoComplete="nickname"
               placeholder="2~12글자 · 비우면 guestN 발급"
             />
-            <button className="button button-primary button-large" type="button" onClick={openQueue}>
-              대기열 입장 <span aria-hidden="true">→</span>
+            <button className="button button-primary button-large" type="button" onClick={openLan}>
+              {isAndroid ? "LAN 대국 입장" : "대기열 입장"} <span aria-hidden="true">→</span>
             </button>
             <div className="action-divider"><span>또는</span></div>
             <button className="button button-secondary button-large" type="button" onClick={startSolo}>
               혼자 놀기
             </button>
-            <p className="demo-disclaimer"><span className="demo-dot" /> 온라인 기능 개발 중 · 화면 예시 포함</p>
+            <p className="demo-disclaimer"><span className="demo-dot" /> {isAndroid ? "같은 Wi-Fi에서 상대 검색 · 혼자 놀기는 오프라인" : "온라인 기능 개발 중 · 화면 예시 포함"}</p>
           </div>
           <footer className="home-footer">15×15 교차점 · 자유룰 오목</footer>
         </section>
       )}
+
+      {screen === "lan" && <NativeLanScreen nickname={nickname} onHome={() => void returnHome()} />}
 
       {screen === "queue" && (
         <section className="page-screen queue-screen" aria-labelledby="queue-title">

@@ -1,0 +1,87 @@
+{
+  "evidenceId": "E15-Android-LAN-Recovery-Lifecycle",
+  "observedAtLocal": "2026-11-13",
+  "appVersion": "0.5.0-android-recovery",
+  "versionCode": 3,
+  "lanProtocol": "danpan-lan-v3",
+  "scope": "Android LAN foreground service, lifecycle recovery, logical heartbeat, monotonic timeout/disconnect arbitration, local rule policy vectors",
+  "runtime": {
+    "node": "v24.22.3",
+    "npm": "12.2.2",
+    "vite": "8.3.7",
+    "javaHome": "C:\\Users\\Administrator\\.jdks\\ms-17.0.21.0.2",
+    "androidSdkApi": 36,
+    "gradleWrapper": "8.13",
+    "adbLastObserved": "1.0.41 / platform-tools 37.0.1-15733141; zero connected devices"
+  },
+  "implementation": {
+    "lifecycleOwner": "LanSessionService is a user-started connectedDevice foreground service with a persistent notification; MainActivity only binds and renders snapshots. A partial CPU wake lock is held only while the authority snapshot says the game is ACTIVE and released on terminal state or user stop.",
+    "processDeath": "START_NOT_STICKY. The app does not claim OS process survival or automatic host migration. On the next repository creation, one SQLite transaction cancels pending challenges and marks ACTIVE games ABORTED/SYSTEM_ABORT without a winner, retaining already-FINISHED rows.",
+    "heartbeats": "Explicit peer heartbeat every 15 seconds from the service while a remote ACTIVE game exists; authenticated snapshot/move/challenge requests also refresh last-seen. Authority detects 30 seconds without a valid participant request and applies a 60-second recovery grace.",
+    "deadlineOrdering": "Monotonic deadlines are compared by their original timestamps. The earlier turn timeout or reconnect-grace deadline wins; equal timestamps resolve as TIMEOUT. The disconnected client never authors a result when the authority is unreachable.",
+    "reconnect": "NSD same-playerId discovery; token-authenticated snapshot request; apply the host snapshot; only then set sessionReady and enable moves. Saved session identifiers/token allow a process-recreated client to request the same snapshot.",
+    "networkChange": "Wi-Fi NetworkCallback rebinds the authority ServerSocket/NSD advertisement after loss, address change, or network handle change. Existing turn deadline is not reset."
+  },
+  "checks": [
+    {
+      "command": ". .\\scripts\\use-pinned-runtime.ps1; npm run typecheck; npm test; npm run build:web; git diff --check",
+      "result": "PASS: typecheck; 23 Vitest files / 117 tests; Vite 8.3.7 production assets. git diff --check exit 0; Git emitted expected LF-to-CRLF working-copy notices."
+    },
+    {
+      "command": "Android Studio kotlinc -classpath Android SDK API 36 android.jar -d .cache\\android-lifecycle-kotlin-final <all main Kotlin sources>",
+      "result": "PASS exit 0. Direct source compilation only; existing Android API deprecation warnings. Not Gradle packaging or Android runtime execution."
+    },
+    {
+      "command": "kotlinc LanRecoveryPolicy.kt LanRecoveryPolicyVectors.kt; kotlin -classpath .cache\\lan-recovery-vectors kr.danpan.omok.LanRecoveryPolicyVectorsKt",
+      "result": "PASS: LAN recovery fake-clock vectors: all cases passed. Covers heartbeat 15s; 30s disconnect boundary; 60s grace; return heartbeat before expiry; earlier disconnect vs turn deadline; earlier turn timeout; exact-tie timeout priority; overdue processing by original deadline order."
+    },
+    {
+      "command": ".\\gradlew.bat :app:assembleDebug --no-daemon --max-workers=1",
+      "result": "FAIL before project configuration: java.io.IOException Unable to establish loopback connection. No debug APK produced."
+    },
+    {
+      "command": "Elevated: .\\gradlew.bat :app:assembleDebug --no-daemon --max-workers=1; GRADLE_USER_HOME=C:\\Users\\Administrator\\AppData\\Local\\Temp\\danpan-gradle",
+      "result": "FAIL with the same Unable to establish loopback connection, even outside the restricted shell and with an ASCII-only Gradle cache path."
+    },
+    {
+      "command": "Elevated: .\\gradlew.bat -Dorg.gradle.jvmargs= -Dorg.gradle.daemon=false :app:assembleDebug --max-workers=1",
+      "result": "FAIL with the same loopback connection error. The non-forking JVM-args attempt did not bypass it."
+    },
+    {
+      "command": "Earlier elevated attempt used GRADLE_USER_HOME=C:\\오목게임\\.gradle-user-home",
+      "result": "The child JVM command line rendered the Korean path as question marks and failed to open gradle-instrumentation-agent.jar. This setup error did not compile project code; subsequent ASCII-path attempts isolated the persistent loopback failure."
+    },
+    {
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe version; adb devices -l; Test-Path android\\app\\build\\outputs\\apk\\debug\\app-debug.apk",
+      "result": "adb 1.0.41 / platform-tools 37.0.1-15733141; no devices listed; APK_EXISTS=False."
+    }
+  ],
+  "outcomes": {
+    "typescriptTypecheck": "PASS",
+    "existingVitest": "PASS_117_TESTS",
+    "webAssetBuild": "PASS",
+    "allMainKotlinDirectCompile": "PASS_DIRECT_COMPILER_ONLY",
+    "fakeClockPolicyVectors": "PASS",
+    "gradleApk": "FAILED_BEFORE_PROJECT_CONFIGURATION",
+    "androidSqliteRuntime": "NOT_RUN",
+    "fgsNotificationAndLifecycle": "NOT_RUN_ON_ANDROID",
+    "twoDeviceLanAndWifiTransitions": "NOT_RUN",
+    "physicalDevices": 0,
+    "avd": "Previously inventoried but not started",
+    "screenshotsOrPacketCaptures": "NONE"
+  },
+  "unverified": [
+    "Android SQLite v1-to-v2 migration, startup recovery transaction, and injected database failure on device",
+    "Foreground-service launch, notification permission denial, screen-off behavior, partial-wake-lock impact, task swipe, and OEM battery restrictions",
+    "Two-device heartbeat loss/recovery, 30+60 second disconnect result, turn/disconnect real-time tie, and result agreement",
+    "Wi-Fi loss/restore, IP or Network handle change, local-network permission revocation, and router isolation",
+    "Host process force-stop/relaunch and participant token-authenticated snapshot ordering",
+    "Automatic host migration (explicitly not implemented)"
+  ],
+  "limitations": [
+    "A foreground service improves user-visible background continuity but Android may still kill/force-stop the process.",
+    "The authority does not run on a surviving remote server. If host process dies, remote clients cannot decide a winner; SYSTEM_ABORT is persisted only when that authority repository is opened again, unless the user explicitly stopped its service while it was alive.",
+    "LAN TCP JSON remains unencrypted.",
+    "Direct Kotlin compilation and fake-clock vectors do not validate Android service/notification/database runtime or APK packaging."
+  ]
+}

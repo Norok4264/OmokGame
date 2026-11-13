@@ -1,5 +1,7 @@
 # 통신 계약과 영속성 경계
 
+> Android LAN 전환(2026-11-13): 아래는 기존 PWA 계약이다. 권위 판정·저장 순서와 색 배정을 이식하되 검색·호스트 선정·이름 예약 범위·Android 세션·호스트 종료 계약은 [전환 기준](android-transition.md)에 따라 별도 설계한다. Android 전송/보안 구현은 아직 없다.
+
 계약 버전: 1  
 상태: 서버 권위 착수·채팅·복구·결과/재도전·통신 관측 구현. 최신 보안/보관 계약은 아래 10단계를 따른다.
 
@@ -133,3 +135,17 @@ Migration 4는 rematches.resolved_at_utc/종료 정리 인덱스, 5는 player_se
 외부 한 HTTPS 출처의 /ws는 Caddy가 내부 Node3001의 /ws로 Upgrade하고, /api/*는 접두사를 제거해 HTTP health/readiness로 전달한다. 운영 Origin은 실제 APP_DOMAIN의 https 출처 한 개이며 빈 도메인은 Compose에서 거절한다. 이 구성은 실제 공인 도메인에 배포되지 않았다.
 
 종료 시작 시 Lobby의 새 메시지를 무시하고 readiness=false를 반환한다. WS1012로 재시작을 알리고 정상 drain 또는 10초 경계 강제 종료 뒤 DB를 닫는다. 다음 시작의 PREPARING 취소/ACTIVE 시스템 무효/최종 결과 보존은 유지한다. 프로토콜 버전1과 게임/채팅 필드·원자 commit 순서는 변경하지 않았다.
+
+## Android LAN v4 (2026-11-13)
+
+아래는 PWA 서버 프로토콜이 아니라 Kotlin Android 기기 간 TCP JSON RPC 계약이다. 서비스 DNS-SD 속성과 JSON `protocol` 값은 `danpan-lan-v4`/attribute `4`로 고정한다. v3와 혼합 버전 대국은 호환으로 간주하지 않는다. 각 TCP 연결은 요청 JSON 한 줄과 응답 JSON 한 줄이며 UTF-8 16KiB 상한/4초 소켓 deadline을 사용한다.
+
+| 방향 | type | 핵심 필드 | 권한/상태 |
+|---|---|---|---|
+| Client→Authority | `rematch.request` | `gameId`, `requestId`, access token | 결과방 안 FINISHED 승자 ID 기준 패자만 요청; 요청 마감=min(요청+30초, 종료+5분) |
+| Client→Authority | `rematch.respond` | `gameId`, `rematchId`, `accept`, `requestId`, access token | 대국 승자만 응답. 승낙은 새 UUID gameId/빈 보드/요청자 백·응답자 흑 생성 |
+| Client→Authority | `rematch.cancel` | `gameId`, `rematchId`, `requestId`, access token | pending 요청자는 승자 응답 전 취소 가능. 종료 후 재요청은 10초 cooldown 적용 |
+| Client→Authority | `chat.send` | `gameId`, `messageId`, `body`, `requestId`, access token | 두 대국 참가자만. 1–200 code point, 발신자별 최근 5초 5건. ACTIVE만 송신 |
+| Authority→Client | response `snapshot` | 최신 game/revision, resultRoom deadline, rematch, chat messages/sequence | commit 뒤 반환. 응답 요청 ID 재확인은 이전 성공을 보존하고 최신 snapshot을 붙임 |
+
+SQLite schema v3에 `lan_rematches`, `lan_chat_messages`, `lan_chat_ids`가 추가됐다. rematch/game transition과 성공 request는 같은 transaction, chat sequence는 game revision과 분리한다. 최근100개 채팅 본문은 game별 유지하며 결과방 5분 경과 때 본문과 message ID replay hash를 정리한다. 앱 세션 토큰은 기존 v3 계약대로 transport 인증에만 쓰며 통신 로그에는 기록하지 않는다. 실제 Android 소켓/SQLite 실행 검증은 E16에서 미실행이다.

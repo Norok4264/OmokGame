@@ -1,8 +1,12 @@
 # 단판 오목
 
-PC Chrome·Edge와 Android Chrome을 대상으로 하는 React·TypeScript·Vite PWA와 Node.js·ws·SQLite 앱입니다. 온라인은 서버가 착수와 결과를 확정하며, 혼자 놀기는 같은 자유룰과 기기 내부 Worker 봇을 사용합니다.
+> 2026-11-13 현재 앱은 Android 설치형 LAN 대국 앱이다. APK `0.6.0-android-results-chat-comm` (versionCode 4, protocol v4)를 실제 빌드하고 Android 13/API33 및 Android 16/API36 기기에 데이터 보존 방식으로 설치 확인했다. APK와 SHA-256, 재빌드 절차, 서명 구분, 기기 사용법은 [Android 설치·재현·제출 안내](docs/android-delivery.md)를 따른다. 기존 PWA는 보존된 과거 구현이다.
 
-현재 앱은 **0.1.0**, 이번 Windows 빌드는 **0.1.0-8f52d08ed448ebe3**입니다. [인수 기준](docs/acceptance.md), [11단계 전달·검증 기록](docs/release-handoff.md), [실제 증거](docs/evidence-index.md)를 먼저 확인하세요. 실제 서버/도메인과 Android 기기가 제공되지 않아 **공개 배포·Android 실기 인수는 미완료**입니다. 로컬 WS 패킷은 실제 수집했으며 WSS 캡처는 없습니다.
+Android 앱은 같은 Wi-Fi의 두 기기 사이에서 한 기기가 권위 호스트가 되어 LAN 대국을 진행한다. PC·외부 서버·도메인은 앱 사용에 필요하지 않다. 인터넷 차단 LAN·게스트망·OS 강제 종료 복구 등 미검증 조건은 완료로 간주하지 않는다. Android 구조와 과거 PWA 안내는 아래 기록을 참조한다.
+
+기존 PC Chrome·Edge와 Android Chrome용 React·TypeScript·Vite PWA 및 Node.js·ws·SQLite 구현을 보존하고 있습니다. 이는 현재 Android 앱이 사용하는 경로가 아닌 과거 PWA의 구현·검증 기록입니다.
+
+보존 중인 PWA는 **0.1.0**, 당시 Windows 빌드는 **0.1.0-8f52d08ed448ebe3**입니다. 과거 PWA와 Android 전환 단계의 이전 관측은 역사 기록이며 최신 앱/빌드 상태는 이 README 첫머리와 [Android 전달 안내](docs/android-delivery.md), [인수 기준](docs/acceptance.md), [인수인계](docs/handoff.md), [증거 인덱스](docs/evidence-index.md)에서 확인하세요. 실제 Android 양측 채팅 화면은 수집했고, 나머지 OS·망 전환 등 미검증 항목은 acceptance에 남아 있습니다.
 
 ## 고정 실행환경과 설치
 
@@ -23,7 +27,9 @@ npm run build
 
 `npm ci`는 기존 package-lock.json을 사용합니다. 승인된 better-sqlite3/esbuild 고정 버전의 설치 스크립트는 package.json의 allowScripts 정책을 따릅니다. native 모듈을 소스로 빌드해야 하는 환경에는 Python·C/C++ 빌드 도구가 필요하며 Docker/CI에는 이를 준비했습니다. 설치 과정에서 lockfile을 재생성하거나 자동 의존성 업그레이드를 하지 마세요.
 
-구조는 apps/web, apps/server, packages/shared, docs입니다. 배포 설정은 deploy, CI는 .github/workflows/ci.yml, 검증/포장 도구는 scripts에 있습니다. 기본 경로는 PWA이며 Android Studio·Gradle·JDK는 빌드 필수 아님입니다. Android 프로젝트/Gradle Wrapper를 새로 생성하지 않았습니다.
+기존 구조는 apps/web, apps/server, packages/shared, docs이며 Android 프로젝트를 android/에 추가했습니다. 실제 APK는 Studio build `AI-262.10968.63.2622.16730706`, IDE JBR25와 별도인 Microsoft JDK17.0.21.0.2, Wrapper8.13, AGP8.13.2, Kotlin2.3.10, compile/target SDK36으로 빌드했습니다. `[Android 설치·재현·제출 안내](docs/android-delivery.md)`에 APK hash, SDK 범위, 명령과 ASCII 경로 재현법이 있습니다. 사용자 전역 JDK를 변경하지 않았습니다.
+
+시제품을 빌드할 때는 Android Studio의 Gradle JDK를 `C:\Users\Administrator\.jdks\ms-17.0.21.0.2`로 선택하거나, PowerShell에서 프로젝트 로컬로 지정하고 `android\gradlew.bat :app:assembleDebug`를 실행합니다. 사용자 PC 설정은 Codex 작업 셸과 다를 수 있으므로 해당 경로가 실제 PC에도 있는지 먼저 확인하세요. Android 17 이상을 target 37로 올리는 빌드에는 `ACCESS_LOCAL_NETWORK` 선언과 runtime 승인이 추가 선행 조건입니다.
 
 ## 로컬 실행과 재현
 
@@ -135,12 +141,12 @@ docker compose --env-file deploy/.env.production -f deploy/compose.yaml start se
 ~~~powershell
 node scripts/check-release.mjs
 node scripts/package-source.mjs
-Get-FileHash releases/danpan-omok-source-0.1.0.tar.gz -Algorithm SHA256
+Get-FileHash releases/danpan-omok-android-0.6.0-android-results-chat-comm-source.tar.gz -Algorithm SHA256
 ~~~
 
-최신 작업 파일을 담은 전달본은 releases/danpan-omok-source-0.1.0.tar.gz, 체크섬은 releases/SHA256SUMS.txt입니다. 소스·에셋·고정 lockfile·테스트·예제 환경·CI·배포 설정·문서를 포함합니다. SOURCE_MANIFEST.json은 파일별 SHA-256과 코드 해시를 담습니다. 빈 폴더에 압축을 푼 뒤 그 폴더에서 `node scripts/verify-source.mjs`로 확인하고 위 설치/검사 명령을 실행하세요. 전달본은 .git과 node_modules 없이 생성하며 Git에서 제외합니다.
+최신 작업 파일을 담은 전달본은 `releases/danpan-omok-android-0.6.0-android-results-chat-comm-source.tar.gz`, 체크섬은 `releases/SHA256SUMS.txt`입니다. 소스·Android Wrapper·에셋/폰트 라이선스·고정 lockfile·테스트·예제 환경·문서를 포함하며 APK, .git, node_modules, 빌드 출력, 키와 개인 보고서는 넣지 않습니다. SOURCE_MANIFEST.json은 Android 앱 버전, 파일별 SHA-256과 코드 해시를 담습니다. ASCII 경로의 빈 폴더에 압축을 풀고 Node 24.22.3/npm12.2.2 설치 후 `node scripts/verify-source.mjs`로 확인해 Android 안내의 재빌드 명령을 실행하세요. 전달본은 Git에서 제외합니다.
 
-.gitignore와 포장 도구는 실제 .env/비밀 설정, SQLite/WAL/SHM, 빌드/캐시/로그, 원시 pcap/pcapng/HAR, 개인 IDE와 private-reports·submission-private를 제외합니다. .env.example과 deploy/.env.production.example은 포함합니다. 기존 추적 파일에도 제외 규칙이 자동 적용되지는 않으며 이번 검사에서 추적된 제외 대상은 0건입니다. Android 프로젝트는 없으며 향후 필요한 경우 Gradle Wrapper 소스/바이너리는 포함하고 local.properties·build·서명키는 제외합니다.
+.gitignore와 포장 도구는 실제 .env/비밀 설정, SQLite/WAL/SHM, 빌드/캐시/로그, 원시 pcap/pcapng/HAR, 개인 IDE와 private-reports·submission-private를 제외합니다. .env.example과 deploy/.env.production.example은 포함합니다. 기존 추적 파일에도 제외 규칙이 자동 적용되지는 않으며 이전 검사에서 추적된 제외 대상은 0건입니다. Android Wrapper 스크립트/JAR/설정은 소스에 포함하고 local.properties·build·서명키는 제외합니다.
 
 **코드 공개는 학번·성명이 있는 개인 보고서 공개를 뜻하지 않습니다.** 개인 보고서는 private-reports/ 또는 별도 비공개 저장 위치에 두고 교수 제출 경로로 따로 전달하세요. 코드 전달본에는 개인 PDF/DOCX/HWP 보고서를 넣지 않습니다. 학번·성명을 추정하지 않았습니다. 폰트의 OFL 원문은 공개 자원에 유지했습니다.
 
@@ -169,7 +175,9 @@ git push origin main
 5. 혼자 놀기 오프라인 준비 완료 → 네트워크 차단 → 앱 종료/재실행 → 봇 대국 완료. Android는 신뢰 HTTPS와 실제 기기에서 별도 확인.
 6. 실제 패킷 자료는 [안전한 요약](docs/evidence/stage11-packet-summary.json)과 [수집 절차](docs/report-network-collection.md)를 사용합니다. 이번 캡처는 Vite→Node의 평문 loopback WS이며 공인 WSS/물리 링크 시험이 아닙니다.
 
-[11단계 전달·실제 결과·알려진 한계](docs/release-handoff.md)에 설치/배포 검증, Android·WSS·PWA 설치/PNG/재접속 재확인 상태와 제출 증거 목록을 기록했습니다. 이전 단계의 실제 관측은 역사 증거로 보존합니다.
+[11단계 전달·실제 결과·알려진 한계](docs/release-handoff.md)에 기존 PWA/배포 검증과 Android 실기·APK 한계를 기록했습니다. 새 Android 구조 결정·시제품 빌드/연결 결과는 [android-lan-prototype.md](docs/android-lan-prototype.md)와 [증거 JSON](docs/evidence/android-lan-prototype.json)에 기록했습니다. 이전 단계의 실제 관측은 역사 증거로 보존합니다.
+
+Android LAN 최신 소스는 앱 `0.6.0-android-results-chat-comm` / protocol v4입니다. 결과·재도전·채팅·PNG·통신 보기 구현과 범위는 [E16 문서](docs/android-lan-results-chat-png.md), APK build/install 증거는 [E20 JSON](docs/evidence/android-apk-delivery.json)에 기록했습니다. PNG Gallery 열기와 양측 채팅 화면은 앞 단계에서 확인했습니다. 이 단계는 APK 설치를 재확인했으며 그 이후 전체 플레이/재접속 시나리오는 실행하지 않았습니다.
 
 ## 구성 근거
 

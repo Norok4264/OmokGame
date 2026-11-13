@@ -1,0 +1,39 @@
+{
+  "evidenceId": "Android-LAN-Chat-Followup-E19-2026-11-13",
+  "observedAtLocal": "2026-11-13 14:18-14:19 Asia/Seoul (user-created device screenshots)",
+  "app": {
+    "applicationId": "kr.danpan.omok",
+    "versionName": "0.6.0-android-results-chat-comm",
+    "versionCode": 4,
+    "targetSdk": 36,
+    "installedVersionRecheckedAt": "2026-11-13 14:23 Asia/Seoul",
+    "result": "Both currently connected devices reported the same versionName/versionCode."
+  },
+  "devices": {
+    "continuity": "Same two USB-connected devices used in E17/E18; model/OS inventory is in docs/evidence/android-lan-integration-stage.json.",
+    "serials": "omitted"
+  },
+  "screenshots": [
+    {
+      "file": "docs/evidence/android-e19-chat-sent-tablet.jpg",
+      "origin": "User-created screenshot from tablet DCIM/Screenshots",
+      "observedContent": "Omok game chat shows '나 · guest1 ㅎㅎ' in blue."
+    },
+    {
+      "file": "docs/evidence/android-e19-chat-received-phone.jpg",
+      "origin": "User-created screenshot from phone DCIM/Screenshots",
+      "observedContent": "Omok game chat shows the same 'ㅎㅎ' as '상대 · guest1' in red."
+    }
+  ],
+  "result": {
+    "status": "PASS_FOR_BASIC_REAL_DEVICE_CHAT_SEND_RECEIVE_AND_DISPLAY",
+    "details": "The tablet sender view and phone receiver view show the same Korean message. Sender is blue; recipient labels it as the opponent in red. This confirms actual Android device-to-device chat rendering in both directions for this message."
+  },
+  "notTested": [
+    "Korean IME composition and Enter handling",
+    "Duplicate messageId retry/idempotency and rate/length boundaries",
+    "Draft retention across disconnect and manual retry after reconnection",
+    "Communication viewer event details or packet capture"
+  ],
+  "privacy": "Only the latest screenshot files from each standard DCIM/Screenshots folder were examined and copied as evidence. Device serials, SSID, BSSID, IP addresses, and unrelated personal image files are omitted."
+}

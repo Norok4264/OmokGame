@@ -1,0 +1,134 @@
+{
+  "evidenceId": "Android-LAN-Integration-Followup-2026-11-13",
+  "observedAtLocal": "2026-11-13 13:48-13:57 Asia/Seoul",
+  "app": {
+    "applicationId": "kr.danpan.omok",
+    "versionName": "0.6.0-android-results-chat-comm",
+    "versionCode": 4,
+    "targetSdk": 36,
+    "lanProtocol": "danpan-lan-v4"
+  },
+  "adb": "Android Debug Bridge 1.0.41 / platform-tools 37.0.1-15733141 on Windows 11 build 22631",
+  "devices": [
+    {
+      "model": "SM-N981N",
+      "androidRelease": "13",
+      "api": 33,
+      "screen": "1080x2400",
+      "installedApp": "0.6.0-android-results-chat-comm (4)",
+      "POST_NOTIFICATIONS": "denied"
+    },
+    {
+      "model": "SM-X510",
+      "androidRelease": "16",
+      "api": 36,
+      "screen": "1440x2304 reported by wm size; landscape capture rendered 2560x1600",
+      "installedApp": "0.6.0-android-results-chat-comm (4)",
+      "POST_NOTIFICATIONS": "granted"
+    }
+  ],
+  "network": {
+    "wifi": "Both associated with the same WPA2-Enterprise SSID; SSID and BSSID withheld from the report.",
+    "ipv4Relationship": "Both were in the same 192.168.24.0/21 subnet and reported the same gateway. Exact device IPs omitted.",
+    "internetStatus": "Android ConnectivityManager reported Wi-Fi VALIDATED/INTERNET on both. Mobile IMS connectivity was also active on the phone. Therefore this run does NOT verify an Internet-blocked router, Internet-free operation, or isolation from cellular fallback.",
+    "routerIsolation": "The positive same-network condition allowed NSD discovery and TCP challenge/acceptance. Guest-Wi-Fi/client-isolation failure was not tested. Router admin settings were not changed."
+  },
+  "actualCommands": [
+    {
+      "command": "adb devices -l; adb version",
+      "result": "Two authorized device entries; adb 1.0.41 / platform-tools 37.0.1-15733141. Serials intentionally omitted."
+    },
+    {
+      "command": "adb shell getprop ro.product.model; getprop ro.build.version.release; getprop ro.build.version.sdk; wm size; dumpsys package kr.danpan.omok; dumpsys wifi; dumpsys connectivity",
+      "result": "Captured model, OS/API, installed version, notification permission, common Wi-Fi network/subnet/gateway and Internet VALIDATED state. SSID/BSSID/IP identifiers excluded from retained evidence."
+    },
+    {
+      "command": "adb shell am start -n kr.danpan.omok/.MainActivity; adb shell input tap; adb shell screencap -p",
+      "result": "Both installed app activities launched. UI taps and screenshots were used for live discovery and challenge flow."
+    }
+  ],
+  "tests": [
+    {
+      "id": "AND-01 / A01",
+      "name": "install, permission state, same-Wi-Fi discovery, selection, challenge and acceptance",
+      "result": "PARTIAL_PASS",
+      "details": "Both current version apps installed/launched. One device had notification permission denied and one granted; discovery still worked. Same-SSID search reached one peer on both sides after pressing rescan; one momentary asymmetric/stale peer list cleared after rescan. A request appeared on the authority tablet and was accepted. Internet-free, denied-permission UI, guest network and >2 peers were not tested.",
+      "screenshots": [
+        "docs/evidence/android-lan-discovery-phone.png",
+        "docs/evidence/android-lan-discovery-tablet.png",
+        "docs/evidence/android-lan-challenge-accepted.png"
+      ]
+    },
+    {
+      "id": "AND-02 / A04-A05 / B01-B02-B07",
+      "name": "board candidate, commit, authority validation, both boards/revisions",
+      "result": "NOT_VERIFIED",
+      "details": "Both previous test rounds entered revision 0 games with correct black-to-move/60-second state. A translucent H8 candidate was visible in a round, but a committed move was not obtained before the live turn deadline. No same-revision committed move on both devices, duplicate move, stale revision, unauthorized move, or DB failure was verified in this run. Turn timeout then ended the game. The app's 60-second rule was not changed."
+    },
+    {
+      "id": "AND-03 / A06-A07 / B04",
+      "name": "result, PNG, rematch and role/color assignment",
+      "result": "PARTIAL_PASS_FROM_PRIOR_E16_RUN",
+      "details": "Prior device run verified timeout result, Gallery-opened PNG, and rematch creating a new empty revision-0 game with requester WHITE/responder BLACK while authority remained guest1. This follow-up also reached another accepted challenge but it timed out. Five-in-a-row, resign, draw, disconnect result, PNG share/win marker, and host-role swap are not verified."
+    },
+    {
+      "id": "AND-04 / A08-A11 / B08",
+      "name": "chat and IME",
+      "result": "NOT_VERIFIED",
+      "details": "The chat panel and empty state were visible. A prior draft remained unsent. No delivered message, duplicate-ID retry, Korean IME composition behavior, message cap, or security input test was confirmed."
+    },
+    {
+      "id": "AND-05 / A09 / B09-B11",
+      "name": "solo offline, screen lifecycle, network reconnection, updates",
+      "result": "PARTIAL_PRIOR_EVIDENCE_ONLY",
+      "details": "Existing evidence shows Android solo screen and bot move. This run did not disable all network routes, test fully offline restart, screen-off behavior during a live match, app/process termination, Wi-Fi reconnect/IP change, or update while in a match."
+    },
+    {
+      "id": "AND-06 / A10",
+      "name": "Android PNG storage and opening",
+      "result": "PASS_FOR_TIMEOUT_PNG_IN_PRIOR_E16_RUN",
+      "details": "A timeout result PNG was saved and opened in Samsung Gallery. It showed names, colors, reason, complete empty board and save time. No winning-line PNG or share operation."
+    },
+    {
+      "id": "AND-07 / A12",
+      "name": "real communication viewer, transport metadata and OSI distinction",
+      "result": "NOT_VERIFIED_ON_DEVICE",
+      "details": "No actual communication-viewer event list was inspected and no packet capture was made. Source documentation is not a runtime observation."
+    },
+    {
+      "id": "AND-08 / B03-B06-B12",
+      "name": "participant/host loss, restart, deadlines and storage policy",
+      "result": "NOT_VERIFIED_ON_DEVICE",
+      "details": "No app force-stop, participant exit, host exit/restart, screen-off, Wi-Fi reconnect, deadline-boundary or storage error injection was performed."
+    },
+    {
+      "id": "LAN-NO-INTERNET",
+      "name": "same-router internal LAN with Internet blocked",
+      "result": "NOT_VERIFIED",
+      "details": "Wi-Fi reported VALIDATED/INTERNET and phone mobile IMS remained connected. The test did not establish an isolated Internet-off condition."
+    },
+    {
+      "id": "LAN-GUEST-ISOLATION",
+      "name": "guest network/client isolation failure guidance",
+      "result": "NOT_RUN",
+      "details": "No router configuration was changed; no guest SSID or client-isolation network was available for a controlled test."
+    },
+    {
+      "id": "HOST-ROLE-SWAP",
+      "name": "swap authority host and participant devices",
+      "result": "NOT_VERIFIED",
+      "details": "The current installation UUID election kept the tablet as authority. Reversing it would require resetting/recreating an installation identity; app data was not cleared because that would erase the devices' local game/session data."
+    },
+    {
+      "id": "MULTI-PEER-AND-COLLISION",
+      "name": "two simultaneous challenges, more than one opponent, duplicate move/chat",
+      "result": "NOT_VERIFIED",
+      "details": "Only two physical Android devices were available. No third peer or independent device-generated simultaneous challenge was available; duplicate move/chat were not confirmed."
+    }
+  ],
+  "sourceFixesCarriedForward": [
+    "The previous E16 defect fix aligns NSD registration and discovery to SERVICE_PROTOCOL_VERSION=4.",
+    "The previous Kotlin Gradle DSL migration enables the current Android Gradle Plugin build."
+  ],
+  "evidenceLimit": "This is a two-real-device run, not emulator or mobile viewport emulation. No test result is inferred from source or earlier PWA runs."
+}

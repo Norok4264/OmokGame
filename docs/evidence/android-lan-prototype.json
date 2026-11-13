@@ -1,0 +1,63 @@
+{
+  "observedDate": "2026-11-13",
+  "timezone": "Asia/Seoul",
+  "stage": "Android LAN connection prototype",
+  "appVersionName": "0.2.0-lan-prototype",
+  "productArchitectureDecision": "Hybrid React/TypeScript presentation and shared game logic with a native Kotlin LAN/lifecycle/persistence/media adapter; temporary prototype UI is native-only.",
+  "versions": {
+    "androidStudio": "2026.2.2 / AI-262.10968.63.2622.16730706",
+    "gradleWrapper": "8.13",
+    "wrapperDistributionSha256": "20f1b1176237254a6fc204d8434196fa11a4cfb387567519c61556e8710aed78",
+    "wrapperJarOfficialSha256": "81a82aaea5abcc8ff68b3dfcb58b3c3c429378efd98e7433460610fecd7ae45f",
+    "agp": "8.13.2",
+    "kotlinGradlePlugin": "2.3.10",
+    "buildJdk": "Microsoft OpenJDK 17.0.21.0.2+1-LTS",
+    "compileSdk": 36,
+    "buildTools": "35.0.0",
+    "targetSdk": 36,
+    "minSdk": 23,
+    "jvmTarget": 17
+  },
+  "commands": [
+    {
+      "command": "C:\\Users\\Administrator\\.jdks\\ms-17.0.21.0.2\\bin\\jar.exe tf C:\\Users\\Administrator\\.gradle\\wrapper\\dists\\gradle-8.13-bin\\5xuhj0ry160q40clulazy9h7d\\gradle-8.13\\lib\\plugins\\gradle-wrapper-main-8.13.jar",
+      "result": "Found the Gradle 8.13 nested gradle-wrapper.jar resource. Extracted it into the Android project; its SHA-256 matches Gradle's official wrapper checksum."
+    },
+    {
+      "command": "android\\gradlew.bat --version (JAVA_HOME=verified Microsoft JDK 17; GRADLE_USER_HOME=existing Administrator .gradle)",
+      "result": "PASS: Gradle 8.13; Launcher JVM 17.0.21.0.2; project daemon criteria `toolchainVersion=17` is loaded and reported as Compatible with Java 17, any vendor."
+    },
+    {
+      "command": "android\\gradlew.bat --no-daemon --stacktrace assembleDebug (same JDK, SDK 36 and Gradle cache)",
+      "result": "FAIL before project configuration/compilation: Gradle could not create its single-use daemon connection; java.io.IOException Unable to establish loopback connection; PipeImpl Invalid argument: connect. Retried with escalation, offline/no-daemon flags, and aligned JVM arguments; same failure."
+    },
+    {
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe devices -l",
+      "result": "PASS: command ran; device list empty."
+    },
+    {
+      "command": "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\emulator\\emulator.exe -list-avds",
+      "result": "PASS: one registered AVD `Medium_Phone_API_37.0`; not launched."
+    }
+  ],
+  "runtimeTest": {
+    "adbDevices": [],
+    "avdLaunched": false,
+    "physicalAndroidDevices": 0,
+    "registeredAvds": ["Medium_Phone_API_37.0"],
+    "lanPeers": 0,
+    "nsdObserved": false,
+    "tcpRequestResponseObserved": false,
+    "apkBuilt": false,
+    "screenshots": []
+  },
+  "limitations": [
+    "Build command cannot reach Gradle project configuration because this Windows task environment cannot establish Gradle's local daemon loopback pipe, even when run outside the sandbox.",
+    "No connected Android device or running emulator; no service registration, discovery, or on-device network exchange has been observed.",
+    "No full game, authentication, SQLite, PNG save, or Android permission dialog is implemented in this prototype.",
+    "Target SDK 36 does not implement the ACCESS_LOCAL_NETWORK runtime prompt required when targeting API 37+; documented as a follow-up gate."
+  ],
+  "pwaSourcesPreserved": true,
+  "dependenciesChanged": false,
+  "toolsUpgraded": false
+}

@@ -1,0 +1,73 @@
+{
+  "evidenceId": "E20",
+  "observedAt": "2026-11-13",
+  "scope": "Android debug APK build, signing, metadata, and install verification",
+  "app": {
+    "applicationId": "kr.danpan.omok",
+    "versionName": "0.6.0-android-results-chat-comm",
+    "versionCode": 4,
+    "protocolVersion": 4,
+    "minSdk": 23,
+    "targetSdk": 36,
+    "compileSdk": 36,
+    "buildTools": "35.0.0"
+  },
+  "hostEnvironment": {
+    "os": "Windows 11 build 22631",
+    "shell": "PowerShell",
+    "androidStudioBuild": "AI-262.10968.63.2622.16730706",
+    "ideJbr": "OpenJDK 25.0.4+16339643-b508.27 (not used for Gradle build)",
+    "gradleJdk": "Microsoft JDK 17.0.21.0.2+1-LTS",
+    "gradleWrapper": "8.13",
+    "agp": "8.13.2",
+    "kotlinPlugin": "2.3.10",
+    "gradleDaemonCriteria": "toolchainVersion=17",
+    "javaTarget": 17,
+    "kotlinJvmTarget": 17,
+    "node": "24.22.3 (process-local pinned runtime)",
+    "npm": "12.2.2",
+    "vite": "8.3.7",
+    "adb": "1.0.41 / platform-tools 37.0.1-15733141"
+  },
+  "build": {
+    "webAssets": "npm run build:web — succeeded",
+    "androidCommand": "android\\gradlew.bat --no-daemon --rerun-tasks :app:assembleDebug, from a temporary ASCII drive alias because the repository path contains non-ASCII characters",
+    "result": "BUILD SUCCESSFUL; 36 tasks executed in 23 seconds",
+    "apkPath": "releases/android/danpan-omok-0.6.0-debug-v4.apk",
+    "bytes": 6811218,
+    "sha256": "58327D65591BA53404B42B0DBE5EC3564529CFBAB6D511FD782073E97F307576",
+    "signature": "apksigner verify succeeded; Android Debug certificate",
+    "certificateSha256": "e746031aaeda6eea691a7a92a74c2dcd5be78a5eab2f619e6851df2ef09fca04",
+    "releaseSignedApk": false,
+    "releaseKeystoreCreatedOrReplaced": false
+  },
+  "installedDevices": [
+    {
+      "model": "SM-N981N",
+      "android": "13 / API 33",
+      "install": "adb install -r succeeded",
+      "packageInspection": "versionCode 4, versionName 0.6.0-android-results-chat-comm, minSdk 23, targetSdk 36"
+    },
+    {
+      "model": "SM-X510",
+      "android": "16 / API 36",
+      "install": "adb install -r succeeded",
+      "packageInspection": "versionCode 4, versionName 0.6.0-android-results-chat-comm, minSdk 23, targetSdk 36"
+    }
+  ],
+  "sourceControl": {
+    "ignoredTrackedSensitiveCandidates": 0,
+    "apkGitIgnored": true,
+    "serialNumbersRecorded": false,
+    "privateAcademicReportAdded": false,
+    "sourceArchive": "releases/danpan-omok-android-0.6.0-android-results-chat-comm-source.tar.gz",
+    "sourceArchiveFiles": 244,
+    "sourceArchiveExtractAndManifestVerification": "passed"
+  },
+  "notCovered": [
+    "This package/install check does not retest all gameplay scenarios.",
+    "A release-signed APK and Play distribution were not produced.",
+    "Internet-disconnected Wi-Fi LAN was not verified; the observed network had validated internet connectivity.",
+    "OS process death, screen-off, guest-network isolation, and Wi-Fi/IP transition behavior remain subject to the user's device verification."
+  ]
+}

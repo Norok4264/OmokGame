@@ -9,8 +9,12 @@ const tsxCli = require.resolve("tsx/cli");
 const vitePackage = require.resolve("vite/package.json");
 const viteCli = path.join(path.dirname(vitePackage), "bin", "vite.js");
 
+const serverCommand = process.env.OMOK_COMPILED_SERVER === "1"
+  ? [path.join(projectRoot, "apps/server/dist/index.js")]
+  : [tsxCli, "watch", "apps/server/src/index.ts"];
+
 const children = [
-  spawn(process.execPath, [tsxCli, "watch", "apps/server/src/index.ts"], { cwd: projectRoot, stdio: "inherit" }),
+  spawn(process.execPath, serverCommand, { cwd: projectRoot, stdio: "inherit" }),
   spawn(process.execPath, [viteCli, "apps/web", "--config", "apps/web/vite.config.ts"], { cwd: projectRoot, stdio: "inherit" }),
 ];
 

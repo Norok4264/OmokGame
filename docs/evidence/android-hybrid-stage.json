@@ -1,0 +1,63 @@
+{
+  "evidenceId": "E13-Android-Hybrid-Integration",
+  "observedAtLocal": "2026-11-13",
+  "scope": "Android WebView integration source, existing TypeScript rule/bot automatic regression, web asset build, Android Gradle build attempt, adb/AVD inventory",
+  "runtime": {
+    "node": "v24.22.3",
+    "npm": "12.2.2",
+    "javaHome": "C:\\Users\\Administrator\\.jdks\\ms-17.0.21.0.2",
+    "gradleWrapper": "8.13",
+    "androidStudioSdk": "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk",
+    "adb": "1.0.41 / platform-tools 37.0.1-15733141"
+  },
+  "checks": [
+    {
+      "command": ". .\\scripts\\use-pinned-runtime.ps1; npm run typecheck",
+      "exitCode": 0,
+      "result": "Passed. Shared, server, and web TypeScript checks completed with pinned Node/npm."
+    },
+    {
+      "command": ". .\\scripts\\use-pinned-runtime.ps1; npm test",
+      "exitCode": 0,
+      "result": "Passed: 23 test files, 117 tests. Includes the existing shared rule and solo bot/storage cases; not an Android runtime test."
+    },
+    {
+      "command": ". .\\scripts\\use-pinned-runtime.ps1; npm run build:web",
+      "exitCode": 0,
+      "result": "Passed with Vite 8.3.7. Built apps/web/dist/index.html, worker bundle, JS/CSS bundles, and public resources for Android packaging."
+    },
+    {
+      "command": "$env:JAVA_HOME='C:\\Users\\Administrator\\.jdks\\ms-17.0.21.0.2'; $env:ANDROID_HOME='C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk'; $env:GRADLE_USER_HOME='C:\\오목게임\\.gradle-user-home'; $env:GRADLE_OPTS='-Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses=false'; .\\gradlew.bat :app:assembleDebug --no-daemon --max-workers=1 --stacktrace",
+      "exitCode": 1,
+      "result": "Failed before Android project compilation: Gradle 8.13 reports Unable to establish loopback connection; cause java.net.SocketException: Invalid argument: connect while creating the Gradle daemon communication pipe. IPv4 preference did not resolve it. No APK was created."
+    },
+    {
+      "command": "adb version; adb devices -l; emulator -list-avds",
+      "exitCode": 0,
+      "result": "adb 1.0.41 / platform-tools 37.0.1-15733141. No connected devices. AVD inventory contains Medium_Phone_API_37.0; it was not started."
+    }
+  ],
+  "sourceChanges": {
+    "androidWebViewHost": "MainActivity serves app assets from the Android assets source root, exposes the restricted Android LAN bridge, and blocks untrusted navigation/resource origins.",
+    "lanUi": "NativeLanScreen connects nickname, host, discovery, peer selection, ping/pong, stop, and back-to-home actions to the Kotlin bridge. This remains a LAN diagnostic prototype, not game matchmaking or synchronized play.",
+    "solo": "Existing React SoloGame, shared TypeScript rules, Web Worker bot, H8 first move, 2-second deadline/legal fallback, stale gameId/revision/taskId rejection, and localStorage recovery/exit deletion are reused. Runtime behavior inside Android WebView remains unverified.",
+    "assetPathCorrection": "MainActivity AssetManager lookup now matches apps/web/dist being registered as the Android assets source root (index.html is opened at the root, not under web/)."
+  },
+  "outcomes": {
+    "webTypesAndTests": "PASS",
+    "webProductionAssetBuild": "PASS",
+    "androidGradleCompilation": "FAILED_BEFORE_COMPILATION",
+    "debugApk": "NOT_CREATED",
+    "androidInstallOrExecution": "NOT_RUN",
+    "physicalAndroidDevice": "NOT_CONNECTED",
+    "emulatorExecution": "NOT_RUN",
+    "androidLanNsDAndTcpRuntime": "NOT_VERIFIED",
+    "androidWebViewWorkerAndRecovery": "NOT_VERIFIED",
+    "androidScreenshots": "NONE"
+  },
+  "limitations": [
+    "Do not report web tests or source inspection as Android runtime validation.",
+    "LAN screen only validates discovery/connection diagnostics; game invitation and board synchronization are not implemented in this stage.",
+    "AND-01 through AND-08 remain unverified."
+  ]
+}

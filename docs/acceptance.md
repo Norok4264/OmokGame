@@ -1,5 +1,76 @@
 # 인수 기준 및 검증 현황
 
+## Android 연결 기기 후속 확인 — 2026-11-13
+
+이 후속 기록은 E16에서 기기 연결/API 조회까지만 끝난 상태를 갱신한다. Windows JDK17 Gradle loopback 문제를 우회하는 프로세스 한정 `java.io.tmpdir`/`jdk.net.unixdomain.tmpdir`, ASCII `subst X:` 경로, SDK 환경 변수로 `:app:assembleDebug`가 실제 성공했고, versionCode 4 디버그 APK를 SM-N981N(Android 13/API 33)과 SM-X510(Android 16/API 36)에 설치·실행했다. `kotlinOptions.jvmTarget` DSL 오류도 `kotlin.compilerOptions.jvmTarget`으로 옮겨 해결했다. 웹·PWA 코드와 전역 Java/Node 설정은 변경하지 않았다.
+
+두 기기에서 LAN NSD 발견, 상대 선택, 신청·승낙, 서로 다른 호스트 역할과 백/흑 배정, revision 0의 새 대국 화면을 확인했다. 발견 직전에는 상대 앱 프로토콜 버전 불일치로 서로 보이지 않는 문제를 관측했고, NSD 등록/검사 양쪽이 같은 protocol v4 상수를 사용하도록 수정한 뒤 발견에 성공했다. 실제 기기에서 응답 전 제한시간 만료가 양쪽에 revision 1 시간패 결과로 동기화됐다. 승자 앱의 PNG 저장 후 Samsung Gallery 열기를 확인했고, 패자의 재도전 요청과 승낙 뒤 새 빈 판/새 revision 0과 요청자 백·승낙자 흑 재배정을 양쪽에서 확인했다. 관련 화면은 [E16 후속 자료](evidence/android-lan-results-chat-png-stage.json) 및 아래 E16 항목에 등록한다.
+
+**통과 범위:** APK 빌드·설치·실행, 두 기기 검색/신청/승낙·게임 시작 스냅샷, 시간패 결과 동기화, Android PNG 저장·실제 Gallery 열기, 재도전 새 판과 배정. **실패 후 수정:** NSD protocol v3/v4 비교 불일치; 수정 후 검색 성공. **부분/미검증:** 착수 확정 후 양쪽 보드 일치·5목 승리·DB 오류/중복/권한 부정·신청 경합·기권/단절/무승부/무효는 이번 실기에서 확인하지 않음. 채팅은 `hello-lank` 초안만 확인되고 전송된 메시지가 상대 화면에 나타난 증거가 없어 실패/미검증이다. 통신 보기, 한글 IME 조합 차단, 메시지 중복 재시도, 최근 200 이벤트 제한, 결과방·재도전 만료 경계, 공유 기능, 실제 Wi-Fi/IP 전환과 앱 종료/복귀도 미검증이다. APK를 빌드했으므로 “기기 미연결이라 전체 Android 시험 불가” 상태는 해소됐지만 이 목록은 남는다.
+
+실행 및 캡처 상세: [Android E16 후속 JSON](evidence/android-lan-results-chat-png-stage.json), [화면/코드 증거 목록](evidence-index.md#android-lan-e16-후속-기기-검증). 캡처의 기기 식별자는 모델명만 사용하며 시리얼은 저장하지 않았다.
+
+### Android 요구사항 ↔ 기존 A/B 대응표
+
+아래는 기존 A01~A12/B01~B12의 과거 PWA 검증 상태를 바꾸지 않고, 같은 요구를 Android LAN 제품에서 확인한 범위만 별도로 덧붙인 표다. 실기 조합은 SM-N981N(Android 13/API33) ↔ SM-X510(Android 16/API36), 앱 `0.6.0-android-results-chat-comm`/versionCode4/protocol v4다.
+
+| Android ID | 기존 번호 대응 | 이번 상태 | 실제 결과/미검증 사유 |
+|---|---|---|---|
+| AND-01 설치·권한·검색·신청 | A01–A03, B08 | 부분 통과 | 두 기기 앱 실행, 같은 SSID 검색, 한 상대 선택, 신청·승낙 확인. 휴대전화 알림 권한 거부/태블릿 허용 상태였으며 검색은 작동. 인터넷 차단/게스트망/다중 상대 미시험. |
+| AND-02 규칙·후보·원자 승인·보드 일치 | A04–A05, B01–B02/B07 | 부분 통과 (E18) | 흑 H8 후보 후 호스트 SQLite commit 승인. 상대 화면의 흑돌 표시와 호스트 DB revision1, (7,7), BLACK, 이후 TIMEOUT revision2를 각각 확인. 양쪽 활성 보드/revision을 동시 비교하지는 않음. 중복·늦은·권한 오류·저장 실패/동시 중복 착수는 실기 미시험. |
+| AND-03 종료·PNG·재도전·색 배정 | A06–A07, B04 | 부분 통과 (E16/E18) | E18 양쪽 결과 TIMEOUT revision2 일치. 재도전 승낙 뒤 빈 판·revision0·채팅 초기화를 확인; 호스트 DB에서 requester WHITE/responder BLACK. E16 실제 Gallery PNG 증거는 유지. E18 재도전은 새 착수 없이 revision1 시간패로 끝남. 5목·기권·무승부·단절/무효·PNG 승리선·호스트/참가자 교환 미검증. |
+| AND-04 채팅·한글 IME | A08/A11, B08 | 부분 통과 (E18/E19) | E19에서 태블릿의 `ㅎㅎ`가 송신자 화면에 파랑, 휴대전화 상대 화면에 빨강으로 동일하게 표시됨을 사용자 스크린샷 양측에서 확인. E18의 별도 테스트 문자열은 호스트 DB에도 저장됨. 한글 IME 조합 중 Enter, 중복 ID/재시도, 빈도·크기 경계, 단절 중 초안 보존은 미시험. |
+| AND-05 혼자 놀기·오프라인·생명주기 | A09/A11, B03/B05/B09–B11 | 부분(과거 단일기기 증거) | 기존 Android solo H8/봇 수 캡처는 유지. 이번 두 기기 실험에서 완전 오프라인 재실행, 화면 꺼짐, 앱/호스트 강제 종료, Wi-Fi 재접속/IP 변경, 업데이트는 미시험. |
+| AND-06 Android PNG | A10 | 부분 통과 | 시간패 결과를 실제 Gallery에서 열어 전체 판·이름·색·사유·시각 확인. 5목 승리선 PNG, 공유 intent/다른 앱은 미검증. |
+| AND-07 통신 보기·OSI·패킷 | A12 | 실기 미검증 | 통신 보기 이벤트를 화면에서 확인하지 않았고 이번 pcap도 수집 안 함. 소스 설명은 관측 증거가 아님. |
+| AND-08 호스트/참가자 단절·보관·장애 | B03–B06/B12 | 미검증 | 기기 종료/재시작, heartbeat·유예 경계, DB 실패, 24시간 보관은 실기 주입하지 않음. |
+| LAN-NO-INTERNET | AND-01, A01 | 미검증 | Wi-Fi가 Android에서 `VALIDATED/INTERNET`으로 보고됐고 휴대전화 셀룰러 데이터도 연결되어 있어 인터넷 차단 조건 아님. |
+| LAN-GUEST-ISOLATION | AND-01, B08 | 미실행 | 격리된 게스트망 접근 없음. 공유기 설정을 바꾸지 않음. |
+| HOST-ROLE-SWAP | AND-01/02/03 | 미검증 | 앱 설치 UUID 기반 호스트 선출이 이 설치 쌍에서 태블릿을 계속 권위자로 선택. 로컬 앱 데이터를 지워 ID를 새로 만드는 조작은 하지 않음. |
+| MULTI-PEER / simultaneous challenge | A03/B01 | 미검증 | 실제 Android 기기 2대만 사용 가능해 세 번째 상대 및 동시 독립 신청을 만들 수 없음. |
+
+실제 세부 명령·네트워크 상태·권한·각 테스트 결과는 [Android 통합 증거 JSON](evidence/android-lan-integration-stage.json)에 있다. 두 기기는 같은 WPA2-Enterprise SSID, 같은 `/21` 대역, 같은 gateway에서 NSD 발견과 신청/승낙이 됐다. SSID/BSSID/IP는 비공개 처리했다.
+
+## Android LAN 복구와 앱 생명주기 — 2026-11-13
+
+### E18 두 기기 실기 후속 확인
+
+2026-11-13 재실행 시험에서 두 Android 기기 간 NSD 상대 검색, 신청·승낙, 흑 H8 실제 확정, 호스트 SQLite commit 후 돌 반영, 양쪽 TIMEOUT 결과(revision2), 패자 재도전 요청·승낙, 새 빈 판/초기화 및 채팅 송신·호스트 저장을 관찰했다. 상세 기록과 선별 화면 증거는 [E18 증거 JSON](evidence/android-lan-integration-followup-2.json), [증거 인덱스](evidence-index.md#android-두-기기-실기-후속-e18)를 참조한다. E17의 결과 중 검증된 항목만 여기서 보완하며 다른 미검증 항목을 통과로 바꾸지 않는다.
+
+이번 실행도 Android Wi-Fi가 인터넷 `VALIDATED`였던 앞선 동일망 조건의 기기를 사용했다. 인터넷 차단 LAN/게스트 격리는 확인하지 않았다. 채팅 메시지는 송신 UI와 호스트 DB에서 확인했으나 수신 기기 화면 확인을 위해 이동하는 중 제한시간이 끝나 양쪽 채팅 일치 증거는 미확보했다. 한글 IME/중복 메시지/착수/DB 오류/단절·복귀/호스트 교환은 미검증이다.
+
+### E19 사용자 저장 양측 채팅 화면 확인
+
+사용자가 양 기기의 `DCIM/Screenshots`에 남긴 2026-11-13 14:18~14:19 캡처를 확인했다. 태블릿은 `나 · guest1 ㅎㅎ`를 파랑으로, 휴대전화는 같은 `ㅎㅎ`를 `상대 · guest1` 빨강으로 표시한다. 이에 따라 Android 실기 채팅의 송신·상대 수신·양쪽 표시 색은 확인 완료로 기록한다. 한글 IME 조합 처리나 중복 메시지 재시도까지 확인한 것은 아니다. [태블릿 송신 화면](evidence/android-e19-chat-sent-tablet.jpg), [휴대전화 수신 화면](evidence/android-e19-chat-received-phone.jpg), [E19 관측 JSON](evidence/android-lan-chat-followup.json).
+
+Android source version `0.5.0-android-recovery`, LAN protocol v3. `LanSessionService` connectedDevice foreground service, 알림·사용자 종료, Activity와 LAN 수명 분리, 15초 heartbeat/30초 단절/60초 유예, 먼저 온 deadline·동일 시각 시간패 우선, token→snapshot→입력 활성화, 동일 playerId 재발견 후 권위 스냅샷 재조회, Wi-Fi/IP 변경 시 endpoint 재등록을 구현했다. 클라이언트는 호스트 부재만으로 결과를 만들지 않는다. DB 시작 복구는 pending 신청을 취소하고 진행 중 권위 대국을 승패 없는 SYSTEM_ABORT로 원자 저장하며 기존 최종 결과를 보존하도록 migration했다.
+
+가짜 시계 정책 벡터와 Kotlin 직접 컴파일 결과는 E15 JSON을 따른다. 고정 Node/npm typecheck·117 테스트·웹 빌드 통과. Gradle Wrapper는 제한/승인 외부와 ASCII 캐시 경로에서도 프로젝트 설정 전 loopback 연결 오류로 실패했고 APK는 없다. adb 1.0.41에서 연결 기기 0. Android Framework/SQLite 실제 실행, 기기 배경·프로세스 종료·망 전환·권한 회수는 미검증이며 FGS는 OS 종료를 막는 보장이 아니다. [정책·상황 표](android-lan-recovery.md), [실제 기록 E15](evidence/android-lan-recovery-stage.json).
+
+## Android LAN 신청·권위 대국 구현 — 2026-11-13
+
+[LAN 설계·닉네임/호스트 정책·SQLite 계약](android-lan-game.md)과 [실제 증거 E14](evidence/android-lan-game-stage.json)를 기준으로 확인한다. Android WebView 대기목록에서 NSD 검색과 두 방향 신청, 30초 신청, 취소/승낙/거부, 60초 호스트 마감, 호스트·색 분리, 후보 착수/기권, Kotlin 자유룰, SQLite requestId/revision 저장 경로를 연결했다. 낮은 install UUID가 해당 쌍의 authority이고 권위 DB의 pending challenge/active game unique index 및 transaction 직렬화로 동시 요청을 한 건으로 제한한다.
+
+고정 Node24.22.3/npm12.2.2 타입 검사 및 기존 23개 파일/117개 테스트, Vite 웹 자산 빌드 통과. 설치 Android Studio Kotlin compiler로 main Kotlin 소스와 API36 `android.jar`를 직접 컴파일했으며 순수 Kotlin 자유룰 벡터도 실행 통과했다. 직접 compiler는 Gradle 빌드/APK/기기 실행이 아니다. Gradle `:app:assembleDebug`는 `Unable to establish loopback connection`에서 프로젝트 task 구성 전에 실패, APK 없음. adb는 연결 기기 0, AVD 목록만 확인하고 시작하지 않았다. Android SQLite 실제 트랜잭션, 양쪽 소켓/경합/권한 거절/보드 동기화는 미검증이다. AND-01~AND-08의 실제 Android 인수 상태는 계속 미검증이며 E14를 따른다. 결과 후 재도전·채팅·PNG는 LAN 앱에 아직 연결하지 않았다.
+
+## Android LAN 전환 1단계 — 2026-11-13
+
+기존 PWA 기록/A01~A12/B01~B12와 과거 증거는 유지한다. Android 앱 구조를 하이브리드(React/TypeScript 화면·공유 로직 + Kotlin NSD/TCP/저장소/Android lifecycle adapter)로 선택하고 `android/`에 연결 시제품을 추가했다. 실제 프로젝트 Wrapper 8.13 `--version`은 Microsoft JDK17.0.21.0.2에서 통과했다. `:app:assembleDebug`는 Gradle daemon loopback pipe가 `Invalid argument`로 실패해 APK 빌드/컴파일은 미검증. adb 기기 목록은 0, AVD는 미실행이어서 NSD 등록·검색·실제 ping/pong·권한 거부·Wi-Fi 없음 화면은 런타임 미검증이다. 앱 코드에는 host/search/select/ping-pong/정리 경로와 기본 안내를 구현했으나 source presence를 실행 결과로 표시하지 않는다. API target36이며 target37 이상에 필요한 ACCESS_LOCAL_NETWORK runtime permission은 미구현/별도 다음 게이트다. 전체 게임은 이식하지 않았다. 전체 증거/버전 근거: [Android 시제품 기록](android-lan-prototype.md), [실제 증거 인덱스 JSON](evidence/android-lan-prototype.json). Android 새 항목 AND-01~AND-08은 전부 미검증이다.
+
+## Android 화면·규칙·봇 이식 진행 — 2026-11-13
+
+기존 React 화면을 WebView 앱 자산으로 묶고 Android 전용 LAN 입장 화면을 연결했다. 홈의 닉네임 입력, LAN 호스트 시작/상대 검색·선택·ping/pong 요청, 혼자 놀기 화면을 코드에 연결했다. 혼자 놀기는 기존 TypeScript 자유룰·봇 Worker·2초 제한/합법 대체 수·gameId/revision/taskId 폐기·H8 선공·localStorage 복구/삭제 코드를 재사용한다. Kotlin 자산 경로는 Android assets source root와 일치하도록 수정했다. 고정 Node/npm에서 타입 검사 통과, 기존 자동 시험 23파일/117건 통과, Vite Android 자산 빌드 성공이다. 시험은 브라우저·Node 자동 시험이며 Android 런타임 결과가 아니다.
+
+`:app:assembleDebug`는 Gradle Wrapper 8.13/JDK17에서 Gradle 프로세스의 Windows loopback pipe 생성 실패(`Unable to establish loopback connection`, `Invalid argument: connect`)로 중단됐다. 따라서 APK/Android 컴파일은 생성되지 않았고 설치·앱 실행·키보드·Worker·재실행 복구·LAN NSD/TCP는 미검증이다. adb 조회는 버전 1.0.41/platform-tools 37.0.1-15733141, 연결 기기 없음, 등록 AVD `Medium_Phone_API_37.0`로 나왔다. AVD는 시작하지 않았으며 APK가 없으므로 실행 시험도 수행하지 않았다. Android 신규 항목 AND-01~AND-08은 모두 미검증으로 유지한다. 실제 명령/출력 범위: [Android 하이브리드 통합 증거](evidence/android-hybrid-stage.json). LAN 코드는 연결 진단 시제품이고 대국 신청·실시간 게임 동기화는 아직 없다.
+
+## Android 전환 0단계 조사 결과 — 2026-11-13
+
+[환경/소스 조사](android-stage0.md) 완료. 실제 설치 메타데이터·JBR/JDK 직접 실행·SDK·adb/AVD 목록·Git·소스 구현을 확인했다. .\gradlew.bat --version은 프로젝트/Wrapper 부재로 실행 대상 없음. 환경에 맞는 AGP9.5/Gradle9.6/JDK17 및 대안 AGP8.13.2/Gradle8.13/JDK17 후보를 공식 표와 대조했으나 빌드 검증하지 않았다. AND-01~08은 계속 미검증이며 과거 PWA 결과를 APK 통과로 바꾸지 않았다.
+
+## Android 전환 준비 — 2026-11-13
+
+[Android 전환 기준](android-transition.md)에 AND-01~AND-08과 기존 A01~A12/B01~B12 대응을 등록했다. Android 항목은 모두 미검증이며 아래 PWA 결과는 과거 조건의 증거다. 이번 변경은 요구사항·자산 조사 문서화다. APK 생성·Android 시험·기존 테스트 재실행은 하지 않았다. 다음 단계는 Android 환경 조사다.
+
 기록 시점: 2026-11-12 (Asia/Seoul)  
 현재 단계: 11단계 — 실행/배포/CI/제출 준비; 실제 Android·HTTPS 게이트 미해결. release-handoff.md 참조
 앱 구현 상태: 온라인 서버 대국/복구/결과·재도전·채팅과 Worker 혼자 놀기·PWA 캐시 구현. 최신 항목별 범위와 Android 11단계 gate 참조.
@@ -177,3 +248,58 @@ PWA 경로이므로 Android Studio·Gradle·JDK 확인은 비적용이다. APK �
 [최신 전달/실제 검증/한계](release-handoff.md). Node24.22.3/npm12.2.2 깨끗한 복사본 설치·타입·23개 파일117개 테스트·빌드 성공. 의존성/lockfile 유지. Caddy 구문 검사와 로컬 HTTP/WS 실제 경로/16초 heartbeat 유지 확인. 실제 loopback pcap 수집과 브라우저 착수9/채팅2 대조 완료(E12). 원본은 비공개 제외 경로에만 보관.
 
 Android adb 연결 목록은 다시 확인했으나 비어 있음. Android Chrome 버전·실제 HTTPS/WSS·PWA 설치/오프라인·PNG·망 전환과 실제 두 PC/두 Android 조합은 여전히 미실행이다. 11단계 필수 G11-01~09 중 이 항목들은 **미해결**이며 통과/다음 단계 이월 완료로 바꾸지 않는다. Docker 컨테이너/실제 공인 TLS/실제 GitHub CI도 미실행. 코드/구성/전달본 준비와 실제 배포·실기를 구분한다.
+
+## Android LAN 복구와 결과 기능 — E15/E16
+
+E15는 `0.5.0-android-recovery`의 Kotlin source compile/fake-clock 정책 벡터, 기존 TS 117건 통과 및 APK 빌드 실패 기록이다. E16은 별도 최신 Android 소스 변경이며 E15의 기록을 덮어쓰지 않는다.
+
+| 확인 | 실제 결과 | 범위와 한계 |
+|---|---|---|
+| Android 결과/재도전/채팅/PNG/통신 보기 코드 | 결과방 5분, 패자 요청·승자 응답 30초 상한, 요청 취소·10초 재요청 cooldown, 새 판 원자 생성, 채팅 길이/빈도/최근100/messageId 재확인, IME 조합/초안 처리, Android 저장·열기·공유, 실제 transport event ring buffer 구현 | 소스 반영; Android SQLite/네트워크 실행 검증은 아님 |
+| TypeScript 검사 | `pnpm dlx npm@12.2.2 run typecheck`: 종료 코드 0 | Node 버전은 이번 명령 실행 전에 조회하지 않음 |
+| TypeScript 시험 | `pnpm dlx npm@12.2.2 test`: 23 files / 117 tests passed | 기존 PWA/shared/server 범위; Android Kotlin 저장소 시험 아님 |
+| WebView assets | `pnpm dlx npm@12.2.2 run build:web`: Vite 8.3.7 완료 | Android APK 패키징 아님 |
+| Kotlin source compile | 설치된 Studio kotlinc 2.4.0, Microsoft JDK17.0.21.0.2, SDK API36 `android.jar`로 모든 main Kotlin 파일 compile 성공; deprecation warnings | 프로젝트 Gradle Kotlin plugin2.3.10/AGP task와 APK를 검증하지 않음 |
+| Android-free policy vectors | `LanResultChatPolicy.kt` + `LanResultChatPolicyVectors.kt` 직접 compile/run: 5분·30초 min/만료, 10초 cooldown, 한글·supplementary Unicode 1/200/201자, 5초 경계/5건 상한 모두 통과 | 순수 정책만 확인; Android SQLite 쿼리, 저장 transaction, 네트워크 및 IME 실기 아님 |
+| Gradle APK | JDK17 지정 `:app:assembleDebug` 및 IPv4 preference 재시도가 `Unable to establish loopback connection`으로 Gradle 초기화 실패 | task 구성 전에 중단; APK 산출 없음 |
+| Android 장비·브라우저 | USB 디버깅 승인 후 SM-N981N(Android 13/API 33, Chrome 157.0.8103.50)과 SM-X510(Android 16/API 36, Chrome 157.0.8103.78)이 ADB `device`로 확인됨 | 연결/OS/Chrome 목록 확인 완료. APK가 없어 앱 설치·Android 화면·PNG 시험은 미실행 |
+| 결과 PNG 저장·실제 열기 | 실행하지 않음 | APK·기기 부재; PNG screenshot/파일 증거 없음 |
+| DB·LAN·통신 이벤트 런타임 | 실행하지 않음 | migration, transaction/failure injection, 실제 송수신/재도전/채팅·200건 한도와 두 기기 화면 대조 미검증 |
+
+최신 구현 위치와 실제 명령, 제한은 [Android LAN 결과·재도전·채팅·PNG·통신 보기](android-lan-results-chat-png.md), 실행 관측은 [E16 JSON](evidence/android-lan-results-chat-png-stage.json)에 있다. USB debugging 이후 두 기기가 ADB에서 확인됐지만 Gradle이 APK를 생성하지 못해 실제 저장 PNG 파일 열기는 미실행이다.
+
+기존 통합 검증 G11-02의 기기 연결·Android/Chrome 버전 수집은 후속 확인으로 완료했다. G11-03~07은 아래 E20에서 실제 debug APK 설치를 추가 확인했다. PWA의 Android HTTPS/오프라인 시험(G11-06)은 Android 전환으로 현재 앱 범위와 구별되는 과거 경로다. 연결 확인을 앱 기능 검증으로 계산하지 않는다.
+
+## Android APK 패키징·설치 E20 — 2026-11-13
+
+[Android 설치·재현·제출 안내](android-delivery.md) 및 [E20 JSON](evidence/android-apk-delivery.json)에 실제 환경, 빌드 명령, APK 메타데이터·SHA-256, 서명 구분, 설치 기기와 한계를 기록했다.
+
+| 확인 항목 | 실제 결과 | 범위/한계 |
+|---|---|---|
+| WebView asset build | Node 24.22.3/npm 12.2.2, Vite 8.3.7, `npm run build:web` 성공 | process-local pinned runtime; 전역 설치 변경 없음 |
+| Android toolchain | Studio build `AI-262.10968.63.2622.16730706`; IDE JBR25와 별도로 Microsoft JDK17.0.21.0.2로 Wrapper8.13/AGP8.13.2/Kotlin2.3.10 빌드 | compile/target36, min23, Build Tools35.0.0, Java/Kotlin target17 |
+| Debug APK | 전체 재실행 `:app:assembleDebug` 성공, 36 tasks/23초; package `kr.danpan.omok`, versionCode4, versionName `0.6.0-android-results-chat-comm`; `apksigner verify` 통과 | local artifact `releases/android/danpan-omok-0.6.0-debug-v4.apk`, 6,811,218 bytes, SHA-256 `58327D65591BA53404B42B0DBE5EC3564529CFBAB6D511FD782073E97F307576` |
+| 두 기기 APK 설치 | `adb install -r` 성공. SM-N981N Android13/API33와 SM-X510 Android16/API36에서 `dumpsys package` version4/SDK 범위 확인 | 기존 앱 데이터를 지우지 않았음. 이번 설치 이후 전체 시나리오 재실행은 아님 |
+| 서명·공개물 | debug certificate 서명; release key/APK 미생성. `.gitignore` 패턴에 해당하는 추적 파일 0건 | GitHub 제출은 소스/Wrapper/문서이며 local APK는 별도 전달. 개인 보고서 미포함 |
+
+이번 PC의 한글 저장소 경로는 AGP 경로 처리와 맞지 않아 임시 ASCII `X:` 별칭으로 빌드했다. 재현 문서는 ASCII 경로 체크아웃을 안내한다. 실제 Wi-Fi는 인터넷 검증 상태였으므로 인터넷 차단 LAN, 게스트망, 화면 꺼짐·프로세스 종료·Wi-Fi 재접속 항목은 미검증으로 남긴다. 배포용 release signing은 소유자 비공개 키가 제공되지 않아 수행하지 않았다.
+
+## E21 Android 0.7.0 세션·신청 수정
+
+[변경 파일·명령·실제 결과·실패 수정·미검증](android-lan-session-fix.md). 앱 versionCode5 / protocol v5. 두 기기 설치 및 각 3건 Android SQLite/정책 시험 통과. 태블릿 신청→휴대전화 호스트 대국 실기 확인. 반대 방향 UI·실제 동시 신청·공란 재입장·종료 재실행은 사용자 확인 대기. 결과 후 나가기의 홈 이동은 기존 대기열 복귀 요구와 불일치하여 후속 수정 대상으로 기록한다. 기존 A/B 번호와 과거 PWA 증거를 보존한다.
+
+## E22 AndroidX AAR 호환성 — 2026-11-13
+
+첨부 오류는 compileSdk/minSdk 설정 자체보다 AndroidX 의존성 버전 충돌이었다. android/gradle/libs.versions.toml에서 core-ktx 1.19.1→1.17.0, lifecycle 2.11.0→2.9.4로 내리고 Compose plugin Kotlin 2.2.10을 앱의 Kotlin 2.3.10으로 맞췄다. compileSdk36/minSdk23/targetSdk36, AGP8.13.2, Wrapper8.13은 유지했다. AGP 8.13 공식 최대 지원 API 36.1; AndroidX Core 1.17.0은 API36으로 명시되어 있다.
+
+실행: Gradle Wrapper 8.13/JDK17에서 :app:assembleDebug 성공, APK 갱신됨(2026-11-13 06:30:31 UTC, 17,836,252 bytes). android.overridePathCheck=true는 비ASCII 경로 검사를 통과시키는 설정이고 실빌드는 임시 ASCII 경로 별칭으로 수행했다. SDK XML v4 parser warning과 Kotlin/Android deprecated API warning은 남아 있다. 두 기기 재설치·런타임 대국은 이번 변경에서 하지 않았다.
+
+변경: android/gradle/libs.versions.toml, android/gradle.properties(한글 경로 검사 옵션). AAR 충돌 해결의 근거는 Android 공식 [AGP 8.13 release notes](https://developer.android.com/build/releases/gradle-plugin#8-13-0)와 [AndroidX Core release notes](https://developer.android.com/jetpack/androidx/releases/core)다.
+
+## E23 저장소 정리 — 2026-11-13
+
+`.cache`의 재생성 가능한 과거 브라우저 프로필, 시험용 설치 복사본, 임시 소스 압축/검증 디렉터리 42개(약 1,448.6 MiB)를 삭제했다. 고정 Node24.22.3/npm12.2.2 도구(`.cache/tools`), npm 다운로드 cache, 작업 기록 JSON은 보존했다. APK, 서명 keystore, `releases`, SQLite `data`, `private-captures`, docs/evidence는 건드리지 않았다.
+
+Android APK는 `apps/web`에서 생성한 UI 자원을 WebView assets로 포함하고 `packages/shared` 규칙/봇을 사용한다. `npm run build:web`도 루트 package.json, package-lock, apps/web, packages/shared를 요구한다. 따라서 이들 웹/공유 소스를 PWA 전용으로 보고 삭제하면 Android 빌드가 깨진다. `apps/server`, deploy 설정은 Android 앱 실행 경로에서 사용하지 않지만 root npm workspaces/scripts와 과거 통합시험·증거가 참조해 이번에는 남겼다.
+
+Android Studio가 만든 최상위 app/ 및 Gradle scaffold와 android/app 안에 추가된 com.example Compose scaffold가 현재 git index에 staged 상태였다. 사용자 staged 변경으로 보존하고 삭제하지 않았다. 차후 PWA server 제거를 원하면 먼저 npm workspace/lockfile/CI/test scripts의 서버 의존성을 분리하고 과거 PWA 증거를 보관 구조로 옮긴 뒤 별도 단계에서 검토한다.

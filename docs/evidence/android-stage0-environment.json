@@ -1,0 +1,20 @@
+{
+  "observedDate": "2026-11-13",
+  "timezone": "Asia/Seoul",
+  "scope": "read-only environment and source inspection; documentation written",
+  "shell": {"identity": "pc-21\\codexsandboxoffline", "powershell": "7.6.9", "os": "Windows 10.0.22631"},
+  "studio": {"path": "C:\\Program Files\\Android\\Android Studio", "directoryVersion": "2026.2.2", "productVersion": "AI-262.10968.63.2622.16730706", "buildNumber": "262.10968.63.2622.16730706", "bundledJava": "25.0.4+-16339643-b508.27", "runningProcessFound": false, "lastInspectedStartupLogDate": "2026-11-05", "loggedIdeJvm": "25.0.4+-16339643-b508.27"},
+  "java": {"pathCommand": "not found", "javaHomeProcess": null, "javaHomeUser": null, "javaHomeMachine": null, "verifiedBuildJdkPath": "C:\\Users\\Administrator\\.jdks\\ms-17.0.21.0.2", "verifiedBuildJdkVersion": "17.0.21.0.2+1-LTS"},
+  "androidProject": {"exists": false, "gradleJdk": "프로젝트 생성 전 미설정", "daemonJvm": "프로젝트 생성 전 미설정", "wrapper": "프로젝트 생성 전 미설정", "agp": "프로젝트 생성 전 미설정", "kotlin": "프로젝트 생성 전 미설정", "wrapperVersionExecuted": false},
+  "sdk": {"platforms": ["android-36 revision 2", "android-37.0 revision 2"], "buildTools": ["35.0.0", "36.0.0"], "platformTools": "37.0.1-15733141", "commandLineTools": "23.0", "emulatorPackage": "37.2.13", "systemImage": "android-37.0/google_apis_playstore/x86_64 revision 7"},
+  "adb": {"version": "1.0.41", "connectedDevices": [], "daemonStartedByQuery": true},
+  "avds": ["Medium_Phone_API_37.0"],
+  "emulatorLaunched": false,
+  "runtime": {"pathNode": "v26.13.1", "pathNpm": "11.20.0", "pinnedNode": "v24.22.3", "pinnedNpm": "12.2.2"},
+  "git": {"headShort": "4585cd0", "branch": "main", "existingModifiedCount": 9, "existingUntrackedCount": 3, "lockfileDiffEmpty": true, "ignoredTrackedEmpty": true, "remoteFetched": false},
+  "commands": ["git status --short --branch", "git log -1 --oneline", "rg --files --hidden with dependency/cache exclusions", "Get-Command java,javac,node,npm,git,gradle,adb", "java -version (PATH failed)", "Get-Content product-info.json and jbr/release", "bundled jbr/bin/java.exe -version", "ms-17.0.21.0.2/bin/java.exe -version", "read selected IDE startup log version rows", "parse jdk.table.xml JDK entries", "read SDK source.properties", "adb.exe version", "adb.exe devices -l", "emulator.exe -list-avds", "node --version", "npm --version", "pinned node/npm direct --version", "Get-Content and rg implementation inspection"],
+  "limitations": ["Default sandbox denied SDK/config enumeration and adb execution; approved read-only escalation used", "SDK licenses, Gradle dependency downloads and Android builds not tested", "No Android project: no effective project Gradle JVM or Wrapper exists", "Historical IDE log is not a current running IDE observation", "JDK8 parent executable path absent; nested folder found but version not executed", "No physical device or running emulator", "No application tests rerun in this inspection"],
+  "applicationCodeChanged": false,
+  "toolsInstalledOrUpgraded": false,
+  "apkBuilt": false
+}

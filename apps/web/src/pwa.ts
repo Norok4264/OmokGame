@@ -23,6 +23,12 @@ async function verify(){
 }
 let started=false;
 export async function prepareOffline(){
+  if (window.AndroidOmok) {
+    pwaState.ready=true;
+    pwaState.message="Android 앱에 포함된 화면·규칙·봇 자원을 사용합니다.";
+    publish();
+    return;
+  }
   pwaState.ready=false;
   try{
     if(!import.meta.env.PROD){pwaState.message="개발 서버입니다. 최종 빌드에서 오프라인 자원을 준비하세요.";publish();return;}

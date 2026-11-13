@@ -1,0 +1,95 @@
+{
+  "evidenceId": "Android-LAN-Integration-Followup-2-2026-11-13",
+  "observedAtLocal": "2026-11-13 14:05-14:12 Asia/Seoul",
+  "app": {
+    "applicationId": "kr.danpan.omok",
+    "versionName": "0.6.0-android-results-chat-comm",
+    "versionCode": 4,
+    "targetSdk": 36,
+    "lanProtocol": "danpan-lan-v4"
+  },
+  "tool": {
+    "adb": "Android Debug Bridge 1.0.41 / platform-tools 37.0.1-15733141",
+    "host": "Windows 10.0.22631 PowerShell",
+    "deviceSerials": "omitted"
+  },
+  "devices": [
+    {
+      "model": "SM-N981N",
+      "androidRelease": "13",
+      "api": 33,
+      "installedApp": "0.6.0-android-results-chat-comm (4)"
+    },
+    {
+      "model": "SM-X510",
+      "androidRelease": "16",
+      "api": 36,
+      "installedApp": "0.6.0-android-results-chat-comm (4)"
+    }
+  ],
+  "networkContext": "The same two already-verified devices/network as E17 were used. E17 measured Wi-Fi VALIDATED/INTERNET and active phone cellular IMS, so this is not an Internet-blocked LAN test. SSID, BSSID, IPs, and serials are intentionally omitted.",
+  "actualCommands": [
+    {
+      "command": "adb devices -l",
+      "result": "Two authorized Android devices were attached. Serial values omitted."
+    },
+    {
+      "command": "adb version",
+      "result": "Android Debug Bridge 1.0.41; platform-tools 37.0.1-15733141; Windows 10.0.22631."
+    },
+    {
+      "command": "adb -s <device> shell dumpsys package kr.danpan.omok",
+      "result": "Both devices report versionName 0.6.0-android-results-chat-comm, versionCode 4, minSdk 23, targetSdk 36."
+    },
+    {
+      "command": "adb -s <device> shell input tap/swipe; adb shell screencap -p; adb pull",
+      "result": "Actual installed applications were operated. Screenshots were pulled and curated under docs/evidence/android-e18-*.png. The 60-second game clock continued during observation and expired naturally."
+    },
+    {
+      "command": "adb -s <authority-device> exec-out run-as kr.danpan.omok cat databases/danpan-lan.sqlite; py -c <sqlite3 sanitized query>",
+      "result": "A temporary ignored build-folder copy of the authority device's private SQLite DB was queried without outputting player IDs, request IDs, or network identifiers. It showed game1 FINISHED revision2, WHITE guest2, BLACK guest1, authority BLACK, reason TIMEOUT, winner guest1, and one stored move revision1 at (7,7) BLACK. It showed the subsequent rematch FINISHED revision1 with no moves and one chat row sequence1/body length10."
+    }
+  ],
+  "observations": [
+    {
+      "test": "Automatic peer discovery, challenge, acceptance",
+      "result": "PASS",
+      "details": "Both lobby screens showed one discovered peer. guest2 selected guest1; the tablet displayed the incoming request and 30-second response UI; acceptance entered a game. Applicant white/acceptor black mapping was reflected in the authority DB."
+    },
+    {
+      "test": "Candidate preview and authority-approved move",
+      "result": "PARTIAL_PASS",
+      "details": "The tablet showed candidate H8 before confirmation. After confirmation, the other device showed a black stone at H8 and the host-commit approval message. The authority DB recorded revision1, x=7, y=7, color BLACK. The two active board/revision values were not captured simultaneously, and rejection/failure/race cases were not injected."
+    },
+    {
+      "test": "Timeout result synchronization",
+      "result": "PASS_FOR_THIS_REASON",
+      "details": "The first game ended at revision2 with TIMEOUT and guest1 winning on both result screens. The DB has the H8 black move at revision1 then the timeout finalization. This does not verify five-in-a-row, resignation, draw, disconnect, or invalidation."
+    },
+    {
+      "test": "Rematch and fresh-state initialization",
+      "result": "PARTIAL_PASS",
+      "details": "The loser requested and the winner accepted. The new game UI was empty/revision0 with its own empty chat. DB roles remained requester WHITE/responder BLACK; authority host is tracked separately. No move occurred before timeout, so the new game finished at revision1 by TIMEOUT."
+    },
+    {
+      "test": "Chat send and authority storage",
+      "result": "PARTIAL_PASS",
+      "details": "The tablet displayed the sent message and '전송 완료'. The authority DB stored sequence1 and body length10. The test content was the literal string 'chat%20okk' because Android adb input text did not turn %20 into a space. The phone's chat message UI was not inspected before the 60-second deadline expired; peer receipt is therefore not proven by this run."
+    }
+  ],
+  "screenshots": [
+    "docs/evidence/android-e18-challenge-request.png",
+    "docs/evidence/android-e18-h8-candidate.png",
+    "docs/evidence/android-e18-approved-move-phone.png",
+    "docs/evidence/android-e18-timeout-result-phone.png",
+    "docs/evidence/android-e18-chat-sent.png",
+    "docs/evidence/android-e18-rematch-board-phone.png"
+  ],
+  "notTested": [
+    "Chat arrival visibly rendered on the peer device before timeout; Korean IME composition; duplicate message ID retry; duplicate/late/unauthorized move; simultaneous requests; database failure injection.",
+    "Host/participant swap; host process exit/restart; participant process exit; screen off; Wi-Fi reconnection/IP change; Internet-blocked LAN; guest/client isolation; solo fully offline.",
+    "Five-in-a-row win, resignation, draw, disconnect/invalid result; PNG generated during this run; communication viewer events; packet capture; 5-minute result-room expiry; database/runtime boundary tests."
+  ],
+  "sourceChanges": "No application code changed during this continuation. Existing source fixes remain NSD registration/discovery protocol v4 alignment and Kotlin compilerOptions JVM target configuration.",
+  "evidenceLimit": "This is a real two-Android-device test on the E17 network. It is not an Internet-free router test. Screenshot/UI and host SQLite evidence are not a packet capture or proof of the unobserved peer chat rendering."
+}

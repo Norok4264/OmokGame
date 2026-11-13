@@ -15,7 +15,7 @@ export default defineConfig(async({command,mode})=>{
   plugins: [react(),pwaBuild(root,version)],
   define:{__PWA_BUILD__:JSON.stringify(version)},
   server: {
-    host: "127.0.0.1",
+    host: process.env.OMOK_VITE_HOST ?? "127.0.0.1",
     port: 5173,
     strictPort: true,
     proxy: {
